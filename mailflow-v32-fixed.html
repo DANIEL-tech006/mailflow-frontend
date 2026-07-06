@@ -727,15 +727,12 @@ tr:hover td{background:var(--surface2);}
         <div class="card-title">📢 Post Announcement</div>
         <div class="form-group"><label>Title</label><input type="text" id="annTitle" placeholder="e.g. New feature: AI writing assistant!"></div>
         <div class="form-group"><label>Message</label><textarea id="annBody" rows="4" placeholder="Tell your users what's new..."></textarea></div>
-        <div class="form-group"><label>Media URL (optional - image or video link)</label><input type="text" id="annMediaUrl" placeholder="https://..."></div>
-        <div class="form-group"><label>Media Type</label>
-          <select id="annMediaType">
-            <option value="">None</option>
-            <option value="image">Image</option>
-            <option value="video">Video</option>
-          </select>
+        <div class="form-group">
+          <label>Image or Video (optional, max 20MB)</label>
+          <input type="file" id="annMediaFile" accept="image/*,video/*" onchange="previewAnnouncementMedia()">
+          <div id="annMediaPreview" style="margin-top:10px"></div>
         </div>
-        <button class="btn btn-primary" onclick="postAnnouncement()">📢 Post to All Users</button>
+        <button class="btn btn-primary" id="postAnnBtn" onclick="postAnnouncement()">📢 Post to All Users</button>
       </div>
 
       <div class="card" style="margin-top:20px">
@@ -994,6 +991,17 @@ function showRegister(){ document.getElementById('loginPanel').style.display='no
 function showLogin(){ document.getElementById('registerPanel').style.display='none'; document.getElementById('loginPanel').style.display='flex'; }
 function showAlert(el,msg){ el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),6000); }
 
+async function resendConfirmation(email){
+  try{
+    const res=await fetch(`${API}/auth/resend-confirmation`,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email})
+    });
+    const data=await res.json();
+    alert(res.ok ? '✅ '+data.message : 'Error: '+(data.detail||'Could not resend'));
+  } catch(e){ alert('Connection error'); }
+}
+
 async function handleLogin(){
   const email=document.getElementById('loginEmail').value.trim();
   const password=document.getElementById('loginPassword').value;
@@ -1014,7 +1022,13 @@ async function handleLogin(){
       currentUser=data.user;
       loadDashboard();
     } else {
-      showAlert(errEl, data.detail||'Invalid email or password');
+      const detail=data.detail||'Invalid email or password';
+      if(detail.toLowerCase().includes('confirm')){
+        errEl.innerHTML=`${detail} <a onclick="resendConfirmation('${email}')" style="color:var(--accent);cursor:pointer;font-weight:600">Resend confirmation email</a>`;
+        errEl.classList.add('show');
+      } else {
+        showAlert(errEl, detail);
+      }
     }
   } catch(e){
     showAlert(errEl,'Connection error. Check your internet and try again.');
@@ -1201,29 +1215,65 @@ async function loadAdminAnnouncements(){
   } catch(e){ container.innerHTML=''; }
 }
 
+function previewAnnouncementMedia(){
+  const file=document.getElementById('annMediaFile').files[0];
+  const preview=document.getElementById('annMediaPreview');
+  if(!file){ preview.innerHTML=''; return; }
+  const isVideo=file.type.startsWith('video');
+  const url=URL.createObjectURL(file);
+  preview.innerHTML=isVideo
+    ? `<video src="${url}" controls style="max-width:100%;max-height:200px;border-radius:var(--radius)"></video>`
+    : `<img src="${url}" style="max-width:100%;max-height:200px;border-radius:var(--radius)">`;
+}
+
 async function postAnnouncement(){
   const title=document.getElementById('annTitle').value.trim();
   const body=document.getElementById('annBody').value.trim();
-  const mediaUrl=document.getElementById('annMediaUrl').value.trim();
-  const mediaType=document.getElementById('annMediaType').value;
+  const file=document.getElementById('annMediaFile').files[0];
   if(!title){ alert('Please add a title'); return; }
+  const btn=document.getElementById('postAnnBtn');
+  const originalText=btn.textContent;
+  btn.textContent='Posting...'; btn.disabled=true;
   try{
+    let mediaUrl=null, mediaType=null;
+    if(file){
+      const formData=new FormData();
+      formData.append('file', file);
+      const token=await getValidToken();
+      const uploadRes=await fetch(`${API}/admin/announcements/upload`,{
+        method:'POST',
+        headers:{'Authorization':`Bearer ${token}`}, // no Content-Type - browser sets multipart boundary itself
+        body: formData
+      });
+      if(!uploadRes.ok){
+        const d=await uploadRes.json();
+        alert('Upload error: '+(d.detail||'Could not upload file'));
+        btn.textContent=originalText; btn.disabled=false;
+        return;
+      }
+      const uploadData=await uploadRes.json();
+      mediaUrl=uploadData.url;
+      mediaType=uploadData.media_type;
+    }
+
     const res=await fetch(`${API}/admin/announcements`,{
       method:'POST', headers: await authHeadersAsync(),
-      body:JSON.stringify({title, body, media_url:mediaUrl||null, media_type:mediaType||null})
+      body:JSON.stringify({title, body, media_url:mediaUrl, media_type:mediaType})
     });
     if(!res.ok){
       const d=await res.json();
       alert('Error: '+(d.detail||'Could not post announcement'));
+      btn.textContent=originalText; btn.disabled=false;
       return;
     }
     document.getElementById('annTitle').value='';
     document.getElementById('annBody').value='';
-    document.getElementById('annMediaUrl').value='';
-    document.getElementById('annMediaType').value='';
+    document.getElementById('annMediaFile').value='';
+    document.getElementById('annMediaPreview').innerHTML='';
     alert('✅ Announcement posted to all users!');
     loadAdminAnnouncements();
   } catch(e){ alert('Error posting announcement'); }
+  btn.textContent=originalText; btn.disabled=false;
 }
 
 async function deleteAnnouncement(id){
@@ -2440,9 +2490,38 @@ function showSentByIdx(el, idx){
        <div style="font-size:11px;color:var(--text3);margin-top:12px;font-style:italic">Stored here for 90 days only, then automatically deleted for your privacy and security.</div>`
     : `<div class="inbox-detail-body" style="color:var(--text3);font-style:italic;margin-top:16px">Body not available for this email (sent before body storage was added, or already past the 90-day retention window). View full content in your email client's sent folder.</div>`;
   document.getElementById('sentDetail').innerHTML=`
-    <div class="inbox-detail-subject">${subDisplay}</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div class="inbox-detail-subject">${subDisplay}</div>
+      <button class="btn-sm btn-ghost" style="padding:4px 10px" onclick="closeSentDetail()">✕</button>
+    </div>
     <div class="inbox-detail-meta">To: <strong>${toDisplay}</strong><br>Sent: ${new Date(e.sent_at).toLocaleString()}<br>Status: <span class="badge badge-${e.status==='sent'?'success':'warning'}">${e.status}</span> &nbsp; ${e.is_opened?'<span style="color:var(--success)">👁 Opened</span>':'Not opened yet'}</div>
-    ${bodyHtml}`;
+    ${bodyHtml}
+    <div style="margin-top:20px">
+      <button class="btn-sm btn-danger" onclick="deleteSentEmail('${e.id}')">🗑 Delete</button>
+    </div>`;
+}
+
+function closeSentDetail(){
+  document.querySelectorAll('.inbox-item').forEach(i=>i.classList.remove('active'));
+  document.getElementById('sentDetail').innerHTML=`
+    <div style="text-align:center;padding:80px 20px;color:var(--text3)">
+      <div style="font-size:40px;margin-bottom:12px;opacity:.4">📤</div>
+      <div>Select an email to view details</div>
+    </div>`;
+}
+
+async function deleteSentEmail(id){
+  if(!confirm('Delete this sent email record?')) return;
+  try{
+    const res=await fetch(`${API}/inbox/sent/${id}`,{method:'DELETE',headers: await authHeadersAsync()});
+    if(res.ok){
+      closeSentDetail();
+      loadSentEmails();
+      loadStats();
+    } else {
+      alert('Error deleting email');
+    }
+  } catch(e){ alert('Connection error'); }
 }
 
 async function showReplyByIdx(el, idx){
@@ -2487,8 +2566,25 @@ async function showReplyByIdx(el, idx){
         <button class="btn-sm btn-ghost" onclick="document.getElementById('replyTextarea').value=''">Clear</button>
         <button class="btn-sm btn-accent" id="sendReplyBtn" onclick="sendReplyTo('${r.from_email}','RE: ${(r.subject||'').replace(/'/g,'&apos;')}')">Send Reply ↗</button>
       </div>
+    </div>
+    <div style="margin-top:16px">
+      <button class="btn-sm btn-danger" onclick="deleteReply('${r.id}')">🗑 Delete</button>
     </div>`;
   loadStats();
+}
+
+async function deleteReply(id){
+  if(!confirm('Delete this reply?')) return;
+  try{
+    const res=await fetch(`${API}/inbox/replies/${id}`,{method:'DELETE',headers: await authHeadersAsync()});
+    if(res.ok){
+      closeReplyDetail();
+      loadReplies();
+      loadStats();
+    } else {
+      alert('Error deleting reply');
+    }
+  } catch(e){ alert('Connection error'); }
 }
 
 function closeReplyDetail(){
