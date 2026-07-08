@@ -366,6 +366,7 @@ tr:hover td{background:var(--surface2);}
         </div>
         <span style="color:var(--text3);font-size:12px;flex-shrink:0">✏️</span>
       </div>
+      <a href="mailto:support@mailflow.app?subject=MailFlow%20Support" style="display:block;width:100%;margin-top:8px;text-align:center;font-size:12px;color:var(--text3);text-decoration:none">✉️ Contact Support</a>
       <button class="btn-sm btn-ghost" style="width:100%;margin-top:8px;text-align:center" onclick="handleLogout()">🚪 Logout</button>
     </div>
   </aside>
@@ -482,6 +483,7 @@ tr:hover td{background:var(--surface2);}
             <input type="text" id="contactSearch" placeholder="Search..." style="padding:7px 14px;font-size:13px;width:180px" oninput="filterContacts()">
             <button class="btn-sm btn-accent" onclick="openAddContactModal()">+ Add Contact</button>
             <button class="btn-sm btn-ghost" id="verifySelectedBtn" onclick="verifySelectedContacts()">✅ Verify Selected</button>
+            <button class="btn-sm btn-danger" id="deleteSelectedBtn" onclick="deleteSelectedContacts()" style="display:none">🗑 Delete Selected</button>
             <button class="btn-sm btn-ghost" onclick="exportContactsCSV()">⬇ Export</button>
           </div>
         </div>
@@ -543,6 +545,7 @@ tr:hover td{background:var(--surface2);}
           <div style="font-size:13px;color:var(--text2);margin-bottom:20px">Send one email instantly without creating a campaign. Perfect for testing SMTP or reaching out to a single lead.</div>
           <div class="form-group"><label>From (SMTP Account)</label><select id="qsSmtp"><option value="">Select SMTP account...</option></select></div>
           <div class="form-group"><label>To (Recipient Email)</label><input type="email" id="qsTo" placeholder="recipient@example.com"></div>
+          <button class="btn-sm btn-ghost" style="margin-bottom:16px" onclick="generateWithAI('qsSubject','qsBody')">✨ Generate with AI</button>
           <div class="form-group"><label>Subject</label><input type="text" id="qsSubject" placeholder="e.g. Quick question about your business"></div>
           <div class="form-group"><label>From Name</label><input type="text" id="qsFromName" placeholder="Your name or business name"></div>
           <div class="form-group"><label>Message</label><textarea id="qsBody" rows="8" placeholder="Hi there,&#10;&#10;I wanted to reach out about...&#10;&#10;Best regards,&#10;Daniel"></textarea></div>
@@ -869,11 +872,17 @@ Daniel, daniel@example.com, MailFlow Inc"></textarea>
       <button class="modal-close" onclick="closeCampaignModal()">✕</button>
     </div>
     <div class="form-group"><label>Campaign Name</label><input type="text" id="campName" placeholder="e.g. Lagos Restaurants Outreach"></div>
+    <button class="btn-sm btn-ghost" style="margin-bottom:12px" onclick="generateWithAI('campSubject','campBody')">✨ Generate with AI</button>
     <div class="form-group"><label>Email Subject</label><input type="text" id="campSubject" placeholder="e.g. Quick question about your restaurant"></div>
     <div class="form-group"><label>From Name</label><input type="text" id="campFromName" placeholder="e.g. Daniel from MailFlow"></div>
     <div class="form-group"><label>Reply-To Email</label><input type="email" id="campReplyTo" placeholder="your@email.com"></div>
     <div class="form-group"><label>Select SMTP Account</label><select id="campSmtp"><option value="">Loading SMTP accounts...</option></select></div>
-    <div class="form-group"><label>Select Contact Group (Niche)</label><select id="campContacts"><option value="">All contacts</option></select></div>
+    <div class="form-group">
+      <label>Select Contact Group(s) — leave none checked for All contacts</label>
+      <div id="campContactsGroup" style="max-height:140px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);padding:10px;background:var(--surface2)">
+        <div style="color:var(--text3);font-size:13px">Loading groups...</div>
+      </div>
+    </div>
     <div class="form-group">
       <label>Email Body</label>
       <div style="font-size:12px;color:var(--text3);margin-bottom:8px">Use &#123;&#123;name&#125;&#125; for contact name, &#123;&#123;company&#125;&#125; for company name</div>
@@ -1464,8 +1473,18 @@ async function loadNichesForModal(){
     if(!res.ok) return;
     const contacts=await res.json();
     const niches=[...new Set(contacts.map(c=>c.niche).filter(Boolean))];
-    const sel=document.getElementById('campContacts');
-    sel.innerHTML='<option value="">All contacts ('+contacts.length+')</option>'+niches.map(n=>`<option value="${n}">${n} (${contacts.filter(c=>c.niche===n).length} contacts)</option>`).join('');
+    const container=document.getElementById('campContactsGroup');
+    if(!niches.length){
+      container.innerHTML=`<div style="color:var(--text3);font-size:13px">No groups yet — this campaign will go to all ${contacts.length} contacts.</div>`;
+      return;
+    }
+    container.innerHTML=niches.map(n=>{
+      const count=contacts.filter(c=>c.niche===n).length;
+      return `<label style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px;cursor:pointer">
+        <input type="checkbox" class="camp-niche-check" value="${n.replace(/"/g,'&quot;')}">
+        ${n} (${count} contact${count!==1?'s':''})
+      </label>`;
+    }).join('');
   } catch(e){}
 }
 
@@ -1476,7 +1495,8 @@ async function sendCampaign(){
   const smtpId=document.getElementById('campSmtp').value;
   const fromName=document.getElementById('campFromName').value.trim();
   const replyTo=document.getElementById('campReplyTo').value.trim();
-  const niche=document.getElementById('campContacts').value.trim();
+  const selectedNiches=[...document.querySelectorAll('.camp-niche-check:checked')].map(c=>c.value);
+  const niche=selectedNiches.join(',');
   if(!name||!subject||!body){alert('Please fill in Campaign Name, Subject and Email Body');return;}
   if(!smtpId){alert('Please add an SMTP account first in SMTP Settings');return;}
   const btn=document.getElementById('sendCampaignBtn');
@@ -1693,7 +1713,7 @@ function renderContacts(contacts){
   }
   tbody.innerHTML=contacts.map(c=>`
     <tr>
-      <td><input type="checkbox" class="contact-check" data-id="${c.id}"></td>
+      <td><input type="checkbox" class="contact-check" data-id="${c.id}" onchange="updateContactSelectionUI()"></td>
       <td>${c.name||'—'}</td>
       <td><span style="font-family:'DM Mono',monospace;font-size:12px">${c.email}</span></td>
       <td>${c.company||'—'}</td>
@@ -1707,6 +1727,34 @@ function renderContacts(contacts){
 
 function toggleAllContacts(box){
   document.querySelectorAll('.contact-check').forEach(c=>c.checked=box.checked);
+  updateContactSelectionUI();
+}
+
+function updateContactSelectionUI(){
+  const checkedCount=document.querySelectorAll('.contact-check:checked').length;
+  const btn=document.getElementById('deleteSelectedBtn');
+  if(btn) btn.style.display=checkedCount>0?'inline-flex':'none';
+}
+
+async function deleteSelectedContacts(){
+  const ids=[...document.querySelectorAll('.contact-check:checked')].map(c=>c.dataset.id);
+  if(!ids.length) return;
+  if(!confirm(`Delete ${ids.length} selected contact${ids.length>1?'s':''}? This can't be undone.`)) return;
+  const btn=document.getElementById('deleteSelectedBtn');
+  const originalText=btn.textContent;
+  btn.textContent='Deleting...'; btn.disabled=true;
+  let deleted=0;
+  for(const id of ids){
+    try{
+      const res=await fetch(`${API}/contacts/${id}`,{method:'DELETE',headers: await authHeadersAsync()});
+      if(res.ok) deleted++;
+    } catch(e){}
+  }
+  alert(`✅ ${deleted} contact${deleted!==1?'s':''} deleted${deleted<ids.length?` (${ids.length-deleted} failed)`:''}`);
+  btn.textContent=originalText; btn.disabled=false;
+  btn.style.display='none';
+  loadContacts();
+  loadStats();
 }
 
 async function verifySelectedContacts(){
@@ -2273,6 +2321,28 @@ async function loadQuickSendSmtp(){
     }
     sel.innerHTML=accounts.map(a=>`<option value="${a.id}">${a.display_name||a.gmail_address} (${a.gmail_address}) — ${a.sent_today||0}/${a.daily_limit||500} sent today</option>`).join('');
   } catch(e){}
+}
+
+async function generateWithAI(subjectFieldId, bodyFieldId){
+  const context=prompt("What's this email about? (e.g. \"Offering web design services to restaurant owners in Lagos\")");
+  if(!context || !context.trim()) return;
+  const btn=event.target;
+  const originalText=btn.textContent;
+  btn.textContent='✨ Writing...'; btn.disabled=true;
+  try{
+    const res=await fetch(`${API}/ai/generate-email`,{
+      method:'POST', headers: await authHeadersAsync(),
+      body:JSON.stringify({context: context.trim(), tone:'professional'})
+    });
+    const data=await res.json();
+    if(!res.ok){
+      alert('Error: '+(data.detail||'Could not generate email'));
+    } else {
+      if(data.subject) document.getElementById(subjectFieldId).value=data.subject;
+      if(data.body) document.getElementById(bodyFieldId).value=data.body;
+    }
+  } catch(e){ alert('Connection error generating email'); }
+  btn.textContent=originalText; btn.disabled=false;
 }
 
 async function sendQuickEmail(){
