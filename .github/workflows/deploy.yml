@@ -1,0 +1,39 @@
+name: Zero-Credit Netlify Deploy
+
+on:
+  push:
+    branches:
+      - main # Triggers the workflow whenever you push to your main branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Fetch your code from GitHub
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Set up Node.js environment on GitHub's server
+      - name: Setup Node.js
+        uses: actions/actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      # 3. Install project dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. Compile frontend using GitHub's free computation minutes
+      - name: Build application
+        run: npm run build
+
+      # 5. Push the compiled static files directly to Netlify
+      - name: Deploy to Netlify
+        uses: netlify/actions/cli@master
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        with:
+          args: deploy --dir=dist --prod # Change "dist" to "build" if using older React setups
