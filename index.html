@@ -225,6 +225,19 @@ tr:hover td{background:var(--surface2);}
 .spinner-white{width:18px;height:18px;border:2px solid rgba(255,255,255,.2);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;}
 
 /* MOBILE NAV */
+.faq-chat-btn{position:fixed;bottom:24px;right:24px;width:52px;height:52px;border-radius:50%;background:var(--accent);color:#04150f;border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 16px rgba(0,212,170,.35);z-index:200;display:flex;align-items:center;justify-content:center;transition:transform .15s;}
+.faq-chat-btn:hover{transform:scale(1.06);}
+.faq-chat-panel{position:fixed;bottom:88px;right:24px;width:340px;max-width:calc(100vw - 32px);height:460px;max-height:calc(100vh - 140px);background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);box-shadow:0 12px 40px rgba(0,0,0,.5);z-index:200;display:none;flex-direction:column;overflow:hidden;}
+.faq-chat-panel.open{display:flex;}
+.faq-chat-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--surface2);}
+.faq-chat-header strong{font-family:'Syne',sans-serif;font-size:14px;}
+.faq-chat-body{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;}
+.faq-msg{max-width:85%;padding:9px 12px;border-radius:12px;font-size:13px;line-height:1.5;white-space:pre-wrap;}
+.faq-msg.user{align-self:flex-end;background:var(--accent-dim);color:var(--text);border:1px solid rgba(0,212,170,.25);}
+.faq-msg.bot{align-self:flex-start;background:var(--surface2);border:1px solid var(--border);}
+.faq-chat-input-row{display:flex;gap:8px;padding:10px;border-top:1px solid var(--border);}
+.faq-chat-input-row textarea{resize:none;min-height:38px;max-height:80px;padding:9px 12px;font-size:13px;}
+@media(max-width:768px){.faq-chat-btn{bottom:76px;} .faq-chat-panel{bottom:136px;}}
 .mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:50;padding:8px 0;}
 .mobile-nav-inner{display:flex;justify-content:space-around;align-items:center;}
 .mobile-nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 8px;border-radius:8px;cursor:pointer;min-width:48px;transition:all .15s;position:relative;}
@@ -529,6 +542,7 @@ tr:hover td{background:var(--surface2);}
             <div class="inbox-tab active" style="flex:1">💬 Replies</div>
             <button class="btn-sm btn-ghost" id="refreshRepliesBtn" onclick="checkForReplies()" style="white-space:nowrap">🔄 Refresh</button>
           </div>
+          <div style="padding:10px 16px;font-size:11px;color:var(--text3);border-bottom:1px solid var(--border)">Only shows replies to emails sent through MailFlow via your connected Gmail. Kept for 90 days, then auto-deleted.</div>
           <div id="repliesList"><div style="text-align:center;padding:40px;color:var(--text3);font-size:13px">Loading replies...</div></div>
         </div>
         <div class="inbox-detail" id="replyDetail">
@@ -545,7 +559,7 @@ tr:hover td{background:var(--surface2);}
           <div style="font-size:13px;color:var(--text2);margin-bottom:20px">Send one email instantly without creating a campaign. Perfect for testing SMTP or reaching out to a single lead.</div>
           <div class="form-group"><label>From (SMTP Account)</label><select id="qsSmtp"><option value="">Select SMTP account...</option></select></div>
           <div class="form-group"><label>To (Recipient Email)</label><input type="email" id="qsTo" placeholder="recipient@example.com"></div>
-          <button class="btn-sm btn-ghost" style="margin-bottom:16px" onclick="generateWithAI('qsSubject','qsBody')">✨ Generate with AI</button>
+          <button class="btn-sm btn-ghost" id="qsAiBtn" style="margin-bottom:16px" onclick="generateWithAI('qsSubject','qsBody')">✨ Generate with AI</button>
           <div class="form-group"><label>Subject</label><input type="text" id="qsSubject" placeholder="e.g. Quick question about your business"></div>
           <div class="form-group"><label>From Name</label><input type="text" id="qsFromName" placeholder="Your name or business name"></div>
           <div class="form-group"><label>Message</label><textarea id="qsBody" rows="8" placeholder="Hi there,&#10;&#10;I wanted to reach out about...&#10;&#10;Best regards,&#10;Daniel"></textarea></div>
@@ -872,7 +886,8 @@ Daniel, daniel@example.com, MailFlow Inc"></textarea>
       <button class="modal-close" onclick="closeCampaignModal()">✕</button>
     </div>
     <div class="form-group"><label>Campaign Name</label><input type="text" id="campName" placeholder="e.g. Lagos Restaurants Outreach"></div>
-    <button class="btn-sm btn-ghost" style="margin-bottom:12px" onclick="generateWithAI('campSubject','campBody')">✨ Generate with AI</button>
+    <button class="btn-sm btn-ghost" id="campAiBtn" style="margin-bottom:12px" onclick="generateWithAI('campSubject','campBody')">✨ Generate with AI</button>
+    <div id="aiUpgradeHint" style="display:none;font-size:12px;color:var(--text3);margin:-8px 0 12px">✨ AI writing is a Personal/Corporate feature. <a onclick="showPage('billing',null)" style="color:var(--accent);cursor:pointer">Upgrade →</a></div>
     <div class="form-group"><label>Email Subject</label><input type="text" id="campSubject" placeholder="e.g. Quick question about your restaurant"></div>
     <div class="form-group"><label>From Name</label><input type="text" id="campFromName" placeholder="e.g. Daniel from MailFlow"></div>
     <div class="form-group"><label>Reply-To Email</label><input type="email" id="campReplyTo" placeholder="your@email.com"></div>
@@ -901,7 +916,7 @@ Daniel, daniel@example.com, MailFlow Inc"></textarea>
 // ══════════════════════════════
 const API = 'https://web-production-dd320.up.railway.app';
 const SUPA_URL = 'https://oeqmkuomsvjijrfbktcj.supabase.co';
-const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lcW1rdW9tc3ZqaWpyZmJrdGNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk4NjIwNzksImV4cCI6MjA2NTQzODA3OX0.placeholder';
+const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lcW1rdW9tc3ZqaWpyZmJrdGNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5ODQ4MjAsImV4cCI6MjA5NjU2MDgyMH0.pSL5qupfG1PseCdAj1NqWK68XrfhWGTHJkgjLNFZlTk';
 let currentUser = null;
 let allContacts = [];
 let scraperResults = [];
@@ -967,6 +982,7 @@ function forceReLogin(){
   const appWrap=document.getElementById('appWrap');
   const authWrap=document.getElementById('authWrap');
   if(appWrap) appWrap.style.display='none';
+  setFaqChatVisible(false);
   if(authWrap){
     authWrap.style.display='grid';
     const el=document.getElementById('loginSuccess');
@@ -1080,6 +1096,7 @@ function handleLogout(){
   currentUser=null;
   document.getElementById('appWrap').style.display='none';
   document.getElementById('authWrap').style.display='grid';
+  setFaqChatVisible(false);
 }
 
 // ══════════════════════════════
@@ -1088,6 +1105,8 @@ function handleLogout(){
 function loadDashboard(){
   document.getElementById('authWrap').style.display='none';
   document.getElementById('appWrap').style.display='block';
+  setFaqChatVisible(true);
+  applyPlanGatedUI();
   const name=(currentUser&&(currentUser.full_name||currentUser.email))||'User';
   const firstName=name.split(' ')[0];
   document.getElementById('sidebarName').textContent=firstName;
@@ -1116,6 +1135,7 @@ async function fetchFreshUserData(){
         // Update UI with fresh data
         document.getElementById('sidebarPlan').textContent = (data.plan||'free') + ' plan';
         updateBillingInfo();
+        applyPlanGatedUI();
       }
     }
   } catch(e){ console.log('Could not fetch fresh user data:', e.message); }
@@ -2219,6 +2239,71 @@ async function startPayment(plan){
   }
 }
 
+function applyPlanGatedUI(){
+  const plan=((currentUser&&currentUser.plan)||'free').toLowerCase();
+  const isFree=plan==='free';
+  const qsBtn=document.getElementById('qsAiBtn');
+  const campBtn=document.getElementById('campAiBtn');
+  const hint=document.getElementById('aiUpgradeHint');
+  if(qsBtn) qsBtn.style.display=isFree?'none':'inline-block';
+  if(campBtn) campBtn.style.display=isFree?'none':'inline-block';
+  if(hint) hint.style.display=isFree?'block':'none';
+}
+
+// ══════════════════════════════
+// FAQ CHATBOT
+// ══════════════════════════════
+let faqChatHistory=[];
+function setFaqChatVisible(visible){
+  const btn=document.getElementById('faqChatBtn');
+  if(btn) btn.style.display=visible?'flex':'none';
+  if(!visible){
+    document.getElementById('faqChatPanel').classList.remove('open');
+  }
+}
+function toggleFaqChat(){
+  document.getElementById('faqChatPanel').classList.toggle('open');
+}
+async function sendFaqChat(){
+  const input=document.getElementById('faqChatInput');
+  const msg=input.value.trim();
+  if(!msg) return;
+  const body=document.getElementById('faqChatBody');
+  const esc=(s)=>s.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  body.innerHTML+=`<div class="faq-msg user">${esc(msg)}</div>`;
+  input.value='';
+  body.scrollTop=body.scrollHeight;
+  const sendBtn=document.getElementById('faqChatSendBtn');
+  sendBtn.disabled=true;
+  const typingId='faqTyping'+Date.now();
+  body.innerHTML+=`<div class="faq-msg bot" id="${typingId}">···</div>`;
+  body.scrollTop=body.scrollHeight;
+  try{
+    const res=await fetch(`${API}/ai/faq-chat`,{
+      method:'POST',
+      headers: await authHeadersAsync(),
+      body: JSON.stringify({message: msg, history: faqChatHistory})
+    });
+    const typingEl=document.getElementById(typingId);
+    if(!res || !res.ok){
+      const errData=res? await res.json().catch(()=>null) : null;
+      if(typingEl) typingEl.outerHTML=`<div class="faq-msg bot">⚠️ ${esc((errData&&errData.detail)||'Something went wrong. Try again.')}</div>`;
+      sendBtn.disabled=false;
+      return;
+    }
+    const data=await res.json();
+    if(typingEl) typingEl.outerHTML=`<div class="faq-msg bot">${esc(data.reply).replace(/\n/g,'<br>')}</div>`;
+    faqChatHistory.push({role:'user',text:msg});
+    faqChatHistory.push({role:'model',text:data.reply});
+    if(faqChatHistory.length>20) faqChatHistory=faqChatHistory.slice(-20);
+  } catch(e){
+    const typingEl=document.getElementById(typingId);
+    if(typingEl) typingEl.outerHTML=`<div class="faq-msg bot">⚠️ Connection error. Try again.</div>`;
+  }
+  sendBtn.disabled=false;
+  body.scrollTop=body.scrollHeight;
+}
+
 // ══════════════════════════════
 // UTILITIES
 // ══════════════════════════════
@@ -2265,6 +2350,7 @@ window.addEventListener('load',async ()=>{
     if(token){
       document.getElementById('authWrap').style.display='none';
       document.getElementById('appWrap').style.display='block';
+      setFaqChatVisible(true);
       fetch(`${API}/payments/verify/${paymentRef}`,{headers: await authHeadersAsync()})
       .then(r=>r.json())
       .then(data=>{
@@ -2293,6 +2379,7 @@ window.addEventListener('load',async ()=>{
     localStorage.removeItem('mf_user'); localStorage.removeItem('mf_token');
     document.getElementById('authWrap').style.display='grid';
     document.getElementById('appWrap').style.display='none';
+    setFaqChatVisible(false);
     showAlert(document.getElementById('loginSuccess'),'✅ Email verified! You can now sign in.');
     window.location.hash=''; return;
   }
@@ -2324,6 +2411,11 @@ async function loadQuickSendSmtp(){
 }
 
 async function generateWithAI(subjectFieldId, bodyFieldId){
+  const plan=((currentUser&&currentUser.plan)||'free').toLowerCase();
+  if(plan==='free'){
+    alert('✨ AI email writing is a Personal/Corporate plan feature. Upgrade in Plan & Billing to use it.');
+    return;
+  }
   const context=prompt("What's this email about? (e.g. \"Offering web design services to restaurant owners in Lagos\")");
   if(!context || !context.trim()) return;
   const btn=event.target;
@@ -2629,6 +2721,7 @@ async function showReplyByIdx(el, idx){
       <div style="font-size:14px">${esc(newPart)}</div>
     </div>
     ${quotedPart?`<details style="margin-bottom:20px"><summary style="font-size:12px;color:var(--text3);cursor:pointer">Show earlier message in this thread</summary><div style="font-size:12px;color:var(--text3);margin-top:8px;padding-left:12px;border-left:2px solid var(--border)">${esc(quotedPart)}</div></details>`:''}
+    <div style="font-size:11px;color:var(--text3);margin-bottom:16px;font-style:italic">Stored here for 90 days only, then automatically deleted for your privacy and security. This only shows genuine replies to emails sent through MailFlow via your connected Gmail account - not your whole Gmail inbox.</div>
     <div class="reply-box">
       <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px">Quick Reply</div>
       <textarea id="replyTextarea" placeholder="Type your reply..." rows="5"></textarea>
@@ -2720,5 +2813,19 @@ function updateBillingInfo(){
 }
 
 </script>
+  <button class="faq-chat-btn" id="faqChatBtn" onclick="toggleFaqChat()" title="Ask MailFlow" style="display:none">💬</button>
+  <div class="faq-chat-panel" id="faqChatPanel">
+    <div class="faq-chat-header">
+      <strong>✨ Ask MailFlow</strong>
+      <button class="btn-sm btn-ghost" style="padding:2px 8px" onclick="toggleFaqChat()">✕</button>
+    </div>
+    <div class="faq-chat-body" id="faqChatBody">
+      <div class="faq-msg bot">Hi! Ask me how to use MailFlow, or for help with cold email writing/strategy.</div>
+    </div>
+    <div class="faq-chat-input-row">
+      <textarea id="faqChatInput" placeholder="Type a question..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendFaqChat();}"></textarea>
+      <button class="btn-sm btn-accent" id="faqChatSendBtn" onclick="sendFaqChat()">➤</button>
+    </div>
+  </div>
 </body>
 </html>
