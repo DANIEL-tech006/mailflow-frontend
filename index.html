@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MailFlow — Cold Email Platform</title>
+<title>MailFlows — Cold Email Platform</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0e0c'/%3E%3Cpath d='M14 20 L32 34 L50 20' stroke='%2300d4aa' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Crect x='14' y='20' width='36' height='26' rx='4' stroke='%2300d4aa' stroke-width='5' fill='none'/%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -305,7 +306,7 @@ tr:hover td{background:var(--surface2);}
   <div class="auth-right" id="loginPanel">
     <div class="auth-card fade-in">
       <h2>Welcome back</h2>
-      <p>Sign in to your MailFlow account</p>
+      <p>Sign in to your MailFlows account</p>
       <div class="alert alert-error" id="loginError"></div>
       <div class="alert alert-success" id="loginSuccess"></div>
       <div class="form-group"><label>Email Address</label><input type="email" id="loginEmail" placeholder="you@example.com"></div>
@@ -346,7 +347,7 @@ tr:hover td{background:var(--surface2);}
 <div id="appWrap" class="app-wrap" style="display:none">
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
   <aside class="sidebar" id="sidebar">
-    <div class="sidebar-brand">Mail<span>Flow</span></div>
+    <div class="sidebar-brand">Mail<span>Flows</span></div>
     <div class="sidebar-section">
       <div class="sidebar-label">Main</div>
       <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="nav-icon">📊</span> Dashboard</div>
@@ -379,7 +380,7 @@ tr:hover td{background:var(--surface2);}
         </div>
         <span style="color:var(--text3);font-size:12px;flex-shrink:0">✏️</span>
       </div>
-      <a href="mailto:support@mailflow.app?subject=MailFlow%20Support" style="display:block;width:100%;margin-top:8px;text-align:center;font-size:12px;color:var(--text3);text-decoration:none">✉️ Contact Support</a>
+      <a href="mailto:support@mailflows.org?subject=MailFlows%20Support" style="display:block;width:100%;margin-top:8px;text-align:center;font-size:12px;color:var(--text3);text-decoration:none">✉️ Contact Support</a>
       <button class="btn-sm btn-ghost" style="width:100%;margin-top:8px;text-align:center" onclick="handleLogout()">🚪 Logout</button>
     </div>
   </aside>
@@ -542,7 +543,7 @@ tr:hover td{background:var(--surface2);}
             <div class="inbox-tab active" style="flex:1">💬 Replies</div>
             <button class="btn-sm btn-ghost" id="refreshRepliesBtn" onclick="checkForReplies()" style="white-space:nowrap">🔄 Refresh</button>
           </div>
-          <div style="padding:10px 16px;font-size:11px;color:var(--text3);border-bottom:1px solid var(--border)">Only shows replies to emails sent through MailFlow via your connected Gmail. Kept for 90 days, then auto-deleted.</div>
+          <div style="padding:10px 16px;font-size:11px;color:var(--text3);border-bottom:1px solid var(--border)">Only shows replies to emails sent through MailFlows via your connected Gmail. Kept for 90 days, then auto-deleted.</div>
           <div id="repliesList"><div style="text-align:center;padding:40px;color:var(--text3);font-size:13px">Loading replies...</div></div>
         </div>
         <div class="inbox-detail" id="replyDetail">
@@ -638,11 +639,11 @@ tr:hover td{background:var(--surface2);}
             </div>
             <div style="display:flex;gap:14px;align-items:flex-start">
               <div style="width:32px;height:32px;border-radius:8px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">2️⃣</div>
-              <div><div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">Allow MailFlow</div><div style="font-size:12px;color:var(--text2)">Grant permission to send emails on your behalf</div></div>
+              <div><div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">Allow MailFlows</div><div style="font-size:12px;color:var(--text2)">Grant permission to send emails on your behalf</div></div>
             </div>
             <div style="display:flex;gap:14px;align-items:flex-start">
               <div style="width:32px;height:32px;border-radius:8px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">3️⃣</div>
-              <div><div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">Done Forever</div><div style="font-size:12px;color:var(--text2)">MailFlow sends emails through your Gmail automatically</div></div>
+              <div><div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">Done Forever</div><div style="font-size:12px;color:var(--text2)">MailFlows sends emails through your Gmail automatically</div></div>
             </div>
             <div style="display:flex;gap:14px;align-items:flex-start">
               <div style="width:32px;height:32px;border-radius:8px;background:rgba(63,185,80,.15);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🔒</div>
@@ -857,7 +858,7 @@ tr:hover td{background:var(--surface2);}
     <div id="singleAddFields">
       <div class="form-group"><label>Name</label><input type="text" id="newContactName" placeholder="e.g. Daniel Test"></div>
       <div class="form-group"><label>Email</label><input type="email" id="newContactEmail" placeholder="test@example.com"></div>
-      <div class="form-group"><label>Company (optional)</label><input type="text" id="newContactCompany" placeholder="e.g. MailFlow"></div>
+      <div class="form-group"><label>Company (optional)</label><input type="text" id="newContactCompany" placeholder="e.g. MailFlows"></div>
       <div class="form-group"><label>Niche/Group (optional)</label><input type="text" id="newContactNiche" placeholder="e.g. Testing"></div>
     </div>
 
@@ -866,7 +867,7 @@ tr:hover td{background:var(--surface2);}
         <label>Paste your list — one contact per line</label>
         <textarea id="bulkContactText" rows="7" placeholder="test@example.com
 Daniel, daniel@example.com
-Daniel, daniel@example.com, MailFlow Inc"></textarea>
+Daniel, daniel@example.com, MailFlows Inc"></textarea>
         <div style="font-size:11px;color:var(--text3);margin-top:4px">One per line. Just an email, or "name, email", or "name, email, company"</div>
       </div>
       <div class="form-group"><label>Niche/Group for all of these (optional)</label><input type="text" id="bulkContactNiche" placeholder="e.g. Testing"></div>
@@ -889,7 +890,7 @@ Daniel, daniel@example.com, MailFlow Inc"></textarea>
     <button class="btn-sm btn-ghost" id="campAiBtn" style="margin-bottom:12px" onclick="generateWithAI('campSubject','campBody')">✨ Generate with AI</button>
     <div id="aiUpgradeHint" style="display:none;font-size:12px;color:var(--text3);margin:-8px 0 12px">✨ AI writing is a Personal/Corporate feature. <a onclick="showPage('billing',null)" style="color:var(--accent);cursor:pointer">Upgrade →</a></div>
     <div class="form-group"><label>Email Subject</label><input type="text" id="campSubject" placeholder="e.g. Quick question about your restaurant"></div>
-    <div class="form-group"><label>From Name</label><input type="text" id="campFromName" placeholder="e.g. Daniel from MailFlow"></div>
+    <div class="form-group"><label>From Name</label><input type="text" id="campFromName" placeholder="e.g. Daniel from MailFlows"></div>
     <div class="form-group"><label>Reply-To Email</label><input type="email" id="campReplyTo" placeholder="your@email.com"></div>
     <div class="form-group"><label>Select SMTP Account</label><select id="campSmtp"><option value="">Loading SMTP accounts...</option></select></div>
     <div class="form-group">
@@ -2721,7 +2722,7 @@ async function showReplyByIdx(el, idx){
       <div style="font-size:14px">${esc(newPart)}</div>
     </div>
     ${quotedPart?`<details style="margin-bottom:20px"><summary style="font-size:12px;color:var(--text3);cursor:pointer">Show earlier message in this thread</summary><div style="font-size:12px;color:var(--text3);margin-top:8px;padding-left:12px;border-left:2px solid var(--border)">${esc(quotedPart)}</div></details>`:''}
-    <div style="font-size:11px;color:var(--text3);margin-bottom:16px;font-style:italic">Stored here for 90 days only, then automatically deleted for your privacy and security. This only shows genuine replies to emails sent through MailFlow via your connected Gmail account - not your whole Gmail inbox.</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:16px;font-style:italic">Stored here for 90 days only, then automatically deleted for your privacy and security. This only shows genuine replies to emails sent through MailFlows via your connected Gmail account - not your whole Gmail inbox.</div>
     <div class="reply-box">
       <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px">Quick Reply</div>
       <textarea id="replyTextarea" placeholder="Type your reply..." rows="5"></textarea>
@@ -2813,14 +2814,14 @@ function updateBillingInfo(){
 }
 
 </script>
-  <button class="faq-chat-btn" id="faqChatBtn" onclick="toggleFaqChat()" title="Ask MailFlow" style="display:none">💬</button>
+  <button class="faq-chat-btn" id="faqChatBtn" onclick="toggleFaqChat()" title="Ask MailFlows" style="display:none">💬</button>
   <div class="faq-chat-panel" id="faqChatPanel">
     <div class="faq-chat-header">
-      <strong>✨ Ask MailFlow</strong>
+      <strong>✨ Ask MailFlows</strong>
       <button class="btn-sm btn-ghost" style="padding:2px 8px" onclick="toggleFaqChat()">✕</button>
     </div>
     <div class="faq-chat-body" id="faqChatBody">
-      <div class="faq-msg bot">Hi! Ask me how to use MailFlow, or for help with cold email writing/strategy.</div>
+      <div class="faq-msg bot">Hi! Ask me how to use MailFlows, or for help with cold email writing/strategy.</div>
     </div>
     <div class="faq-chat-input-row">
       <textarea id="faqChatInput" placeholder="Type a question..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendFaqChat();}"></textarea>
