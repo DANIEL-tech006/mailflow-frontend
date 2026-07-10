@@ -146,7 +146,7 @@ tr:hover td{background:var(--surface2);}
 .limit-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:4px;}
 
 /* INBOX */
-.inbox-wrap{display:grid;grid-template-columns:300px 1fr;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;min-height:600px;}
+.inbox-wrap{display:grid;grid-template-columns:300px 1fr;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;height:600px;}
 .inbox-list{border-right:1px solid var(--border);overflow-y:auto;min-width:0;}
 .inbox-tabs{display:flex;border-bottom:1px solid var(--border);}
 .inbox-tab{flex:1;padding:12px;text-align:center;font-size:13px;font-weight:600;font-family:'Syne',sans-serif;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;transition:all .15s;}
@@ -257,7 +257,7 @@ tr:hover td{background:var(--surface2);}
   .hamburger{display:flex;}
   .auth-wrap{grid-template-columns:1fr;}
   .auth-left{display:none;}
-  .inbox-wrap{grid-template-columns:1fr;grid-template-rows:auto 1fr;min-height:auto;}
+  .inbox-wrap{grid-template-columns:1fr;grid-template-rows:auto 1fr;height:auto;min-height:auto;}
   .qs-grid{grid-template-columns:1fr;}
   .inbox-list{border-right:none;border-bottom:1px solid var(--border);max-height:280px;}
   .billing-grid{grid-template-columns:1fr;}
@@ -843,6 +843,7 @@ tr:hover td{background:var(--surface2);}
       <button class="modal-close" onclick="closeBuyCreditsModal()">✕</button>
     </div>
     <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Out of monthly scraper credits? Top up instantly — these never expire and carry over month to month. (1 credit = 1 real email found. Note: bonus credits extend scraping only, not email verification, which is fixed monthly per plan.)</div>
+    <div id="creditBalanceBar" style="font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-dim);border-radius:var(--radius);padding:8px 12px;margin-bottom:14px"></div>
     <div id="creditPacksList" style="display:flex;flex-direction:column;gap:10px">
       <div style="text-align:center;padding:20px;color:var(--text3)">Loading packs...</div>
     </div>
@@ -1342,6 +1343,7 @@ async function loadStats(){
     } else {
       badge.style.display='none';
     }
+    window._lastStats=data;
     const scraperEl=document.getElementById('scraperUsageText');
     if(scraperEl && data.scraper_limit!=null){
       let text=`${data.scraper_used} / ${data.scraper_limit} this month`;
@@ -2172,6 +2174,17 @@ function setCurrency(currency){
 
 async function openBuyCreditsModal(){
   document.getElementById('buyCreditsModal').classList.add('open');
+  const balanceEl=document.getElementById('creditBalanceBar');
+  if(balanceEl){
+    const s=window._lastStats;
+    if(s && s.scraper_limit!=null){
+      const monthlyLeft=Math.max((s.scraper_limit||0)-(s.scraper_used||0),0);
+      const bonus=s.scraper_bonus_credits||0;
+      balanceEl.textContent=`You have ${monthlyLeft+bonus} email credits available (${monthlyLeft} monthly + ${bonus} bonus)`;
+    } else {
+      balanceEl.textContent='';
+    }
+  }
   const list=document.getElementById('creditPacksList');
   list.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3)">Loading packs...</div>';
   try{
