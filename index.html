@@ -164,7 +164,7 @@ tr:hover td{background:var(--surface2);}
 .inbox-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;color:var(--text3);font-size:14px;gap:12px;padding:60px;}
 .inbox-detail-subject{font-family:'Syne',sans-serif;font-size:clamp(16px,2.5vw,20px);font-weight:700;color:var(--text);margin-bottom:8px;word-break:break-word;}
 .inbox-detail-meta{font-size:12px;color:var(--text2);font-family:'DM Mono',monospace;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border);}
-.inbox-detail-body{font-size:14px;color:var(--text2);line-height:1.8;flex:1;}
+.inbox-detail-body{font-size:14px;color:var(--text2);line-height:1.8;flex:0 1 auto;}
 .reply-box{margin-top:20px;padding-top:20px;border-top:1px solid var(--border);}
 .reply-box textarea{min-height:100px;resize:vertical;}
 .reply-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px;}
@@ -703,6 +703,11 @@ tr:hover td{background:var(--surface2);}
         </div>
       </div>
 
+      <div class="card" style="margin-bottom:24px">
+        <div class="card-title">⚡ Credit Usage This Month</div>
+        <div id="creditSummaryBox" style="margin-top:12px;font-size:13px;color:var(--text3)">Loading...</div>
+      </div>
+
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
         <span style="font-size:14px;font-weight:600;color:var(--text)">Currency:</span>
         <div style="display:flex;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;overflow:hidden">
@@ -715,20 +720,20 @@ tr:hover td{background:var(--surface2);}
         <div class="card" style="border-color:var(--border2)">
           <div class="billing-plan-name">Free</div>
           <div class="billing-plan-price" id="price-free">₦0<span>/mo</span></div>
-          <div class="billing-plan-features">✓ 100 emails/day<br>✓ 4 scrapes/month<br>✓ 1 SMTP account<br>✓ 5 campaigns<br>✓ 500 contacts<br>✗ AI personalization<br>✗ Auto follow-ups</div>
+          <div class="billing-plan-features">✓ 100 emails/day<br>✓ 4 email credits/month (scrape+verify)<br>✓ 1 SMTP account<br>✓ 5 campaigns<br>✓ 500 contacts<br>✗ AI personalization</div>
           <button class="btn btn-primary" id="freeBtn" style="margin-top:20px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);cursor:default">Current Plan</button>
         </div>
         <div class="card" style="border-color:var(--accent);position:relative">
           <div class="billing-popular-badge">POPULAR</div>
           <div class="billing-plan-name" style="color:var(--accent)">Personal</div>
           <div class="billing-plan-price" id="price-personal">₦6,500<span>/mo</span></div>
-          <div class="billing-plan-features">✓ 1,200 emails/day<br>✓ 100 scrapes/month<br>✓ 3 SMTP accounts<br>✓ 25 campaigns<br>✓ 20,000 contacts<br>✓ AI personalization<br>✗ Auto follow-ups</div>
+          <div class="billing-plan-features">✓ 1,200 emails/day<br>✓ 100 email credits/month (scrape+verify)<br>✓ 3 SMTP accounts<br>✓ 25 campaigns<br>✓ 20,000 contacts<br>✓ AI personalization</div>
           <button class="btn btn-primary" style="margin-top:20px" id="personalBtn" onclick="handlePlanClick('personal')">Upgrade to Personal</button>
         </div>
         <div class="card" style="border-color:var(--info)">
           <div class="billing-plan-name" style="color:var(--info)">Corporate</div>
           <div class="billing-plan-price" id="price-corporate">₦24,000<span>/mo</span></div>
-          <div class="billing-plan-features">✓ 4,500 emails/day<br>✓ 600 scrapes/month<br>✓ 10 SMTP accounts<br>✓ 55 campaigns<br>✓ 100,000 contacts<br>✓ AI personalization<br>✓ Auto follow-ups<br>✓ Priority support</div>
+          <div class="billing-plan-features">✓ 4,500 emails/day<br>✓ 500 email credits/month (scrape+verify)<br>✓ 10 SMTP accounts<br>✓ 50 campaigns<br>✓ 70,000 contacts<br>✓ AI personalization<br>✓ Priority support</div>
           <button class="btn btn-primary" style="margin-top:20px;background:var(--info)" id="corporateBtn" onclick="handlePlanClick('corporate')">Upgrade to Corporate</button>
           <!-- Hidden cancel subscription link -->
           <div style="text-align:center;margin-top:12px"><a id="cancelSubLink" style="font-size:11px;color:var(--text3);cursor:pointer;display:none" onclick="cancelSubscription()">Cancel subscription</a></div>
@@ -837,7 +842,7 @@ tr:hover td{background:var(--surface2);}
       <div class="modal-title">⚡ Buy Scraper Credits</div>
       <button class="modal-close" onclick="closeBuyCreditsModal()">✕</button>
     </div>
-    <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Out of monthly credits? Top up instantly — these never expire and carry over month to month.</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Out of monthly scraper credits? Top up instantly — these never expire and carry over month to month. (1 credit = 1 real email found. Note: bonus credits extend scraping only, not email verification, which is fixed monthly per plan.)</div>
     <div id="creditPacksList" style="display:flex;flex-direction:column;gap:10px">
       <div style="text-align:center;padding:20px;color:var(--text3)">Loading packs...</div>
     </div>
@@ -1189,7 +1194,7 @@ async function loadAdminDashboard(){
         <div class="card-title">🔍 Scraper Credit Usage (This Month)</div>
         <div class="limit-row" style="margin-top:12px"><span style="font-size:13px;color:var(--text2)">Used across all users</span><span style="font-family:'DM Mono',monospace;font-size:12px">${d.scraper_credits_used_this_month.toLocaleString()} / ${d.scraper_credits_max_possible.toLocaleString()} max possible</span></div>
         <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(usedPct,100)}%;background:${usedPct>70?'var(--warning)':'var(--accent)'}"></div></div>
-        <div style="font-size:11px;color:var(--text3);margin-top:8px">This is real Hunter/Apollo credit consumption — check this against your Hunter.io plan's credit pool to know if you need to upgrade.</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:8px">This is real web-scraping usage — 1 credit = 1 email address actually found, not 1 search.</div>
       </div>`;
   } catch(e){
     container.innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">Error loading admin data</div>';
@@ -1606,7 +1611,7 @@ async function runScraper(){
   if(!niche){alert('Please enter a niche to search');return;}
   document.getElementById('scraperResults').style.display='none';
   document.getElementById('scraperLoading').style.display='block';
-  const stages=['Searching Apollo.io...','Querying Hunter.io...','Verifying emails...','Deduplicating results...'];
+  const stages=['🌐 Scanning the web...','🌐 Checking company websites...','🌐 Extracting published emails...'];
   let i=0;
   const interval=setInterval(()=>{ if(i<stages.length) document.getElementById('scraperStatus').textContent=stages[i++]; },800);
   try{
@@ -2155,15 +2160,6 @@ async function deleteSmtp(id){
 // ══════════════════════════════
 // BILLING
 // ══════════════════════════════
-function updateBillingInfo(){
-  const user=JSON.parse(localStorage.getItem('mf_user')||'{}');
-  const plan=user.plan||'free';
-  const limit=user.daily_limit||100;
-  document.getElementById('currentPlanName').textContent=plan.charAt(0).toUpperCase()+plan.slice(1);
-  document.getElementById('currentPlanLimit').textContent=limit.toLocaleString();
-  document.getElementById('sidebarPlan').textContent=plan+' plan';
-}
-
 function setCurrency(currency){
   selectedCurrency=currency;
   const isNGN=currency==='NGN';
@@ -2188,7 +2184,7 @@ async function openBuyCreditsModal(){
       return `<div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px">
         <div>
           <div style="font-weight:600;font-size:14px">${labels[key]||key}</div>
-          <div style="font-size:12px;color:var(--text2)">${p.credits} scraper credits</div>
+          <div style="font-size:12px;color:var(--text2)">${p.credits} email credits</div>
         </div>
         <button class="btn-sm btn-accent" onclick="buyCreditsPack('${key}')">${price}</button>
       </div>`;
@@ -2811,6 +2807,43 @@ function updateBillingInfo(){
     else expiryEl.textContent='Upgrade to unlock more features';
   }
   updateBillingButtons();
+  loadCreditSummary();
+}
+
+async function loadCreditSummary(){
+  const box=document.getElementById('creditSummaryBox');
+  if(!box) return;
+  try{
+    const res=await fetch(`${API}/payments/credit-summary`,{ headers: await authHeadersAsync() });
+    if(!res || !res.ok){ box.textContent='Could not load credit usage.'; return; }
+    const d=await res.json();
+    const s=d.scraper, v=d.verification;
+    const historyRows=(d.purchase_history||[]).slice(0,6).map(p=>{
+      const date=new Date(p.created_at).toLocaleDateString();
+      const amt=(p.currency||'NGN')==='USD' ? '$'+(p.amount/100).toFixed(2) : '₦'+(p.amount/100).toLocaleString();
+      return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">
+        <span style="color:var(--text2)">${date} · ${(p.plan||'purchase')}</span>
+        <span style="color:${p.status==='success'?'var(--success)':'var(--text3)'}">${amt} · ${p.status}</span>
+      </div>`;
+    }).join('') || '<div style="color:var(--text3);font-size:12px">No purchases yet.</div>';
+    box.innerHTML=`
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:4px"><span>🔍 Scraper credits</span><span>${s.monthly_used}/${s.monthly_limit}</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${Math.min((s.monthly_used/Math.max(s.monthly_limit,1))*100,100)}%"></div></div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">+ ${s.bonus_credits} bonus credit${s.bonus_credits===1?'':'s'} (never expire)</div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:4px"><span>✅ Verification credits</span><span>${v.monthly_used}/${v.monthly_limit}</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${Math.min((v.monthly_used/Math.max(v.monthly_limit,1))*100,100)}%"></div></div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">Fixed monthly - bonus credits don't extend this</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);font-weight:600;margin-bottom:6px;letter-spacing:.5px">RECENT PURCHASES</div>
+      ${historyRows}`;
+  } catch(e){
+    box.textContent='Could not load credit usage.';
+  }
 }
 
 </script>
