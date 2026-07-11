@@ -380,7 +380,7 @@ tr:hover td{background:var(--surface2);}
         </div>
         <span style="color:var(--text3);font-size:12px;flex-shrink:0">✏️</span>
       </div>
-      <a href="mailto:support@mailflows.org?subject=MailFlows%20Support" style="display:block;width:100%;margin-top:8px;text-align:center;font-size:12px;color:var(--text3);text-decoration:none">✉️ Contact Support</a>
+      <a href="javascript:void(0)" onclick="openSupportModal()" style="display:block;width:100%;margin-top:8px;text-align:center;font-size:12px;color:var(--text3);text-decoration:none">✉️ Contact Support</a>
       <button class="btn-sm btn-ghost" style="width:100%;margin-top:8px;text-align:center" onclick="handleLogout()">🚪 Logout</button>
     </div>
   </aside>
@@ -589,7 +589,7 @@ tr:hover td{background:var(--surface2);}
               <div style="font-size:13px;color:var(--text2)">✓ IP warming included</div>
             </div>
             <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;font-family:'DM Mono',monospace;font-size:12px;color:var(--accent);margin-bottom:12px">🚧 COMING SOON</div>
-            <button class="btn-sm btn-ghost" style="width:100%;text-align:center" onclick="alert('Private SMTP Server is coming soon!\n\nJoin the waitlist by emailing:\nsupport@mailflow.app')">📧 Join Waitlist</button>
+            <button class="btn-sm btn-ghost" style="width:100%;text-align:center" onclick="alert('Private SMTP Server is coming soon!\n\nJoin the waitlist by emailing:\nsupport@mailflows.org')">📧 Join Waitlist</button>
           </div>
         </div>
       </div>
@@ -669,7 +669,7 @@ tr:hover td{background:var(--surface2);}
           </div>
           <div style="display:flex;flex-direction:column;gap:8px;align-items:center">
             <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 16px;font-family:'DM Mono',monospace;font-size:12px;color:var(--accent)">🚧 COMING SOON</div>
-            <button class="btn-sm btn-ghost" onclick="alert('Private SMTP Server is coming soon!\n\nJoin the waitlist by emailing:\nsupport@mailflow.app')">
+            <button class="btn-sm btn-ghost" onclick="alert('Private SMTP Server is coming soon!\n\nJoin the waitlist by emailing:\nsupport@mailflows.org')">
               📧 Join Waitlist
             </button>
           </div>
@@ -762,6 +762,11 @@ tr:hover td{background:var(--surface2);}
         <div class="card-title">Existing Announcements</div>
         <div id="adminAnnouncementsList" style="margin-top:12px">Loading...</div>
       </div>
+
+      <div class="card" style="margin-top:20px">
+        <div class="card-title">✉️ Support Tickets</div>
+        <div id="adminSupportList" style="margin-top:12px">Loading...</div>
+      </div>
     </div>
 
     <div class="page-content" id="page-announcements">
@@ -846,6 +851,18 @@ tr:hover td{background:var(--surface2);}
     <div id="creditBalanceBar" style="font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-dim);border-radius:var(--radius);padding:8px 12px;margin-bottom:14px"></div>
     <div id="creditPacksList" style="display:flex;flex-direction:column;gap:10px">
       <div style="text-align:center;padding:20px;color:var(--text3)">Loading packs...</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="supportModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">✉️ Support</div>
+      <button class="modal-close" onclick="closeSupportModal()">✕</button>
+    </div>
+    <div id="supportModalBody">
+      <div style="text-align:center;padding:20px;color:var(--text3)">Loading...</div>
     </div>
   </div>
 </div>
@@ -1251,6 +1268,74 @@ async function loadAdminAnnouncements(){
   } catch(e){ container.innerHTML=''; }
 }
 
+async function loadAdminSupportTickets(){
+  const container=document.getElementById('adminSupportList');
+  if(!container) return;
+  container.innerHTML='Loading...';
+  try{
+    const res=await fetch(`${API}/admin/support-tickets`,{headers: await authHeadersAsync()});
+    if(!res.ok){ container.innerHTML='<div style="color:var(--text3);font-size:13px">Could not load tickets (admin access only).</div>'; return; }
+    const tickets=await res.json();
+    if(!tickets.length){ container.innerHTML='<div style="color:var(--text3);font-size:13px">No support tickets yet.</div>'; return; }
+    const statusColor={open:'var(--warning)',answered:'#4ade80',closed:'var(--text3)'};
+    container.innerHTML = tickets.map(t=>`
+      <div style="padding:12px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;gap:10px;cursor:pointer" onclick="toggleAdminTicket('${t.id}')">
+          <div>
+            <div style="font-weight:600;font-size:13px">${(t.subject||'').replace(/</g,'&lt;')}</div>
+            <div style="font-size:11px;color:var(--text3)">${(t.user_email||'').replace(/</g,'&lt;')} · ${new Date(t.updated_at).toLocaleString()}</div>
+          </div>
+          <div style="font-size:11px;font-weight:700;color:${statusColor[t.status]||'var(--text3)'};text-transform:uppercase;flex-shrink:0">${t.status}</div>
+        </div>
+        <div id="adminTicketBody-${t.id}" style="display:none;margin-top:10px"></div>
+      </div>`).join('');
+  } catch(e){ container.innerHTML='<div style="color:var(--text3);font-size:13px">Could not load tickets.</div>'; }
+}
+
+async function toggleAdminTicket(id){
+  const box=document.getElementById('adminTicketBody-'+id);
+  if(box.style.display==='block'){ box.style.display='none'; return; }
+  box.style.display='block';
+  box.innerHTML='Loading thread...';
+  try{
+    const res=await fetch(`${API}/admin/support-tickets/${id}`,{headers: await authHeadersAsync()});
+    // Uses the admin-only endpoint, which can view any user's ticket.
+    let messages=[];
+    if(res.ok){ const data=await res.json(); messages=data.messages||[]; }
+    box.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:8px;max-height:220px;overflow-y:auto;margin-bottom:10px">
+        ${messages.map(m=>`<div style="font-size:12px"><strong>${m.sender==='admin'?'You':'User'}:</strong> ${(m.body||'').replace(/</g,'&lt;')}</div>`).join('') || '<div style="font-size:12px;color:var(--text3)">No messages loaded.</div>'}
+      </div>
+      <textarea id="adminReplyBox-${id}" rows="3" style="width:100%" placeholder="Write a reply..."></textarea>
+      <button class="btn-sm btn-accent" style="margin-top:6px" onclick="sendAdminTicketReply('${id}')">Send Reply</button>
+      <button class="btn-sm btn-ghost" style="margin-top:6px" onclick="setAdminTicketStatus('${id}','closed')">Mark Closed</button>`;
+  } catch(e){ box.innerHTML='Could not load thread.'; }
+}
+
+async function sendAdminTicketReply(id){
+  const box=document.getElementById('adminReplyBox-'+id);
+  const message=box.value.trim();
+  if(!message) return;
+  try{
+    const res=await fetch(`${API}/admin/support-tickets/${id}/reply`,{
+      method:'POST', headers: await authHeadersAsync(), body: JSON.stringify({message})
+    });
+    if(!res.ok){ alert('Could not send reply.'); return; }
+    await loadAdminSupportTickets();
+  } catch(e){ alert('Could not send reply.'); }
+}
+
+async function setAdminTicketStatus(id, status){
+  try{
+    await fetch(`${API}/admin/support-tickets/${id}/status`,{
+      method:'PATCH', headers: await authHeadersAsync(), body: JSON.stringify({status})
+    });
+    await loadAdminSupportTickets();
+  } catch(e){ alert('Could not update status.'); }
+}
+
+
+
 function previewAnnouncementMedia(){
   const file=document.getElementById('annMediaFile').files[0];
   const preview=document.getElementById('annMediaPreview');
@@ -1412,7 +1497,7 @@ function showPage(pageId,navEl){
   if(pageId==='replies') loadReplies();
   if(pageId==='smtp'){ loadSmtpAccounts(); loadGmailAccounts(); }
   if(pageId==='billing') updateBillingInfo();
-  if(pageId==='admin'){ loadAdminDashboard(); loadAdminAnnouncements(); }
+  if(pageId==='admin'){ loadAdminDashboard(); loadAdminAnnouncements(); loadAdminSupportTickets(); }
   if(pageId==='announcements') loadAnnouncementsFeed();
   if(pageId==='quicksend') loadQuickSendSmtp();
 }
@@ -2208,6 +2293,99 @@ async function openBuyCreditsModal(){
 }
 function closeBuyCreditsModal(){ document.getElementById('buyCreditsModal').classList.remove('open'); }
 
+// ══ SUPPORT ══
+async function openSupportModal(){
+  document.getElementById('supportModal').classList.add('open');
+  await renderSupportList();
+}
+function closeSupportModal(){ document.getElementById('supportModal').classList.remove('open'); }
+
+async function renderSupportList(){
+  const body=document.getElementById('supportModalBody');
+  body.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3)">Loading your tickets...</div>';
+  try{
+    const res=await fetch(`${API}/support/tickets`,{headers: await authHeadersAsync()});
+    if(!res || !res.ok){ body.innerHTML='<div style="color:var(--text3);padding:20px;text-align:center">Could not load tickets.</div>'; return; }
+    const tickets=await res.json();
+    const statusColor={open:'var(--accent)',answered:'#4ade80',closed:'var(--text3)'};
+    body.innerHTML = `
+      <button class="btn-sm btn-accent" style="width:100%;margin-bottom:14px" onclick="showNewTicketForm()">+ New Support Ticket</button>
+      ${tickets.length===0 ? '<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">No tickets yet. Anything you send here goes straight to the MailFlows team - we&apos;ll reply here and by email.</div>' : ''}
+      <div style="display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto">
+        ${tickets.map(t=>`
+          <div class="card" style="padding:12px 14px;cursor:pointer" onclick="viewTicket('${t.id}')">
+            <div style="display:flex;justify-content:space-between;gap:8px">
+              <div style="font-weight:600;font-size:13px">${(t.subject||'').replace(/</g,'&lt;')}</div>
+              <div style="font-size:11px;font-weight:700;color:${statusColor[t.status]||'var(--text3)'};text-transform:uppercase">${t.status}</div>
+            </div>
+            <div style="font-size:11px;color:var(--text3);margin-top:4px">Updated ${new Date(t.updated_at).toLocaleString()}</div>
+          </div>`).join('')}
+      </div>`;
+  } catch(e){
+    body.innerHTML='<div style="color:var(--text3);padding:20px;text-align:center">Could not load tickets.</div>';
+  }
+}
+
+function showNewTicketForm(){
+  document.getElementById('supportModalBody').innerHTML = `
+    <div style="margin-bottom:10px"><label style="font-size:12px;color:var(--text2)">Subject</label>
+      <input type="text" id="newTicketSubject" placeholder="What's this about?" style="width:100%;margin-top:4px"></div>
+    <div style="margin-bottom:14px"><label style="font-size:12px;color:var(--text2)">Message</label>
+      <textarea id="newTicketMessage" placeholder="Tell us what's going on..." style="width:100%;min-height:120px;margin-top:4px"></textarea></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn-sm btn-ghost" onclick="renderSupportList()">Back</button>
+      <button class="btn-sm btn-accent" style="flex:1" onclick="submitNewTicket()">Send</button>
+    </div>`;
+}
+
+async function submitNewTicket(){
+  const subject=document.getElementById('newTicketSubject').value.trim();
+  const message=document.getElementById('newTicketMessage').value.trim();
+  if(!subject || !message){ alert('Please fill in both the subject and message.'); return; }
+  try{
+    const res=await fetch(`${API}/support/tickets`,{
+      method:'POST', headers: await authHeadersAsync(), body: JSON.stringify({subject, message})
+    });
+    if(!res || !res.ok){ alert('Could not send your message - please try again.'); return; }
+    await renderSupportList();
+  } catch(e){ alert('Could not send your message - please try again.'); }
+}
+
+async function viewTicket(id){
+  const body=document.getElementById('supportModalBody');
+  body.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3)">Loading...</div>';
+  try{
+    const res=await fetch(`${API}/support/tickets/${id}`,{headers: await authHeadersAsync()});
+    if(!res || !res.ok){ body.innerHTML='<div style="color:var(--text3);padding:20px">Could not load ticket.</div>'; return; }
+    const data=await res.json();
+    body.innerHTML = `
+      <button class="btn-sm btn-ghost" style="margin-bottom:12px" onclick="renderSupportList()">← Back to tickets</button>
+      <div style="font-weight:700;font-family:'Syne',sans-serif;margin-bottom:10px">${(data.ticket.subject||'').replace(/</g,'&lt;')}</div>
+      <div style="display:flex;flex-direction:column;gap:10px;max-height:280px;overflow-y:auto;margin-bottom:14px">
+        ${data.messages.map(m=>`
+          <div style="align-self:${m.sender==='admin'?'flex-start':'flex-end'};max-width:85%;background:${m.sender==='admin'?'var(--surface2)':'var(--accent-dim)'};border-radius:var(--radius);padding:10px 12px">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px">${m.sender==='admin'?'MailFlows Team':'You'} · ${new Date(m.created_at).toLocaleString()}</div>
+            <div style="font-size:13px;white-space:pre-wrap">${(m.body||'').replace(/</g,'&lt;')}</div>
+          </div>`).join('')}
+      </div>
+      <textarea id="ticketReplyBox" placeholder="Write a reply..." style="width:100%;min-height:70px;margin-bottom:8px"></textarea>
+      <button class="btn-sm btn-accent" style="width:100%" onclick="sendTicketReply('${id}')">Send Reply</button>`;
+  } catch(e){ body.innerHTML='<div style="color:var(--text3);padding:20px">Could not load ticket.</div>'; }
+}
+
+async function sendTicketReply(id){
+  const box=document.getElementById('ticketReplyBox');
+  const message=box.value.trim();
+  if(!message) return;
+  try{
+    const res=await fetch(`${API}/support/tickets/${id}/reply`,{
+      method:'POST', headers: await authHeadersAsync(), body: JSON.stringify({message})
+    });
+    if(!res || !res.ok){ alert('Could not send your reply.'); return; }
+    await viewTicket(id);
+  } catch(e){ alert('Could not send your reply.'); }
+}
+
 async function buyCreditsPack(pack){
   const currency=(typeof selectedCurrency!=='undefined'?selectedCurrency:'NGN');
   try{
@@ -2603,7 +2781,7 @@ function updateBillingButtons(){
     freeBtn.onclick=null;
   } else if(plan==='personal'){
     freeBtn.textContent='Downgrade to Free';
-    freeBtn.onclick=()=>{ if(confirm('Downgrade to Free plan? You will lose access to Personal features at end of billing period.')) alert('To downgrade, contact support at support@mailflow.app'); };
+    freeBtn.onclick=()=>{ if(confirm('Downgrade to Free plan? You will lose access to Personal features at end of billing period.')) alert('To downgrade, contact support at support@mailflows.org'); };
     personalBtn.textContent='Current Plan ✓';
     personalBtn.style.background='var(--surface2)';
     personalBtn.style.color='var(--text)';
@@ -2638,14 +2816,14 @@ function handlePlanClick(plan){
   } else {
     // Downgrading
     if(confirm(`Downgrade to ${plan} plan? Your current features will continue until end of billing period.`)){
-      alert("To downgrade your plan, please email support@mailflow.app with your account email. We will process it within 24 hours.");
+      alert("To downgrade your plan, please email support@mailflows.org with your account email. We will process it within 24 hours.");
     }
   }
 }
 
 function cancelSubscription(){
   if(confirm('Are you sure you want to cancel your subscription? Your plan will continue until end of the billing period, then revert to Free.')){
-    alert("Cancellation request received. Your subscription will end at the next billing date. You will receive a confirmation email. If you change your mind, contact support@mailflow.app");
+    alert("Cancellation request received. Your subscription will end at the next billing date. You will receive a confirmation email. If you change your mind, contact support@mailflows.org");
   }
 }
 
@@ -2705,20 +2883,11 @@ async function showReplyByIdx(el, idx){
   const fromDisplay = (r.from_name||r.from_email||'Unknown').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const emailDisplay = (r.from_email||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const subjectDisplay = (r.subject||'No subject').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const esc=(s)=>(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
 
-  // Try to split the new reply text from the quoted history underneath it,
-  // so it's clear what THEY just said vs what was said before (by either side)
-  const rawBody = r.body || 'No content';
-  const splitMatch = rawBody.match(/^([\s\S]*?)(On .+wrote:[\s\S]*)$/);
-  let newPart, quotedPart;
-  if(splitMatch){
-    newPart = splitMatch[1].trim();
-    quotedPart = splitMatch[2].trim();
-  } else {
-    newPart = rawBody.trim();
-    quotedPart = '';
-  }
-  const esc=(s)=>s.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+  // Gmail connection only has header access (gmail.metadata) - we know a reply
+  // arrived and can show a short snippet, but not the full body or quoted thread.
+  const snippet = r.body || '';
 
   document.getElementById('replyDetail').innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:flex-start">
@@ -2727,23 +2896,57 @@ async function showReplyByIdx(el, idx){
     </div>
     <div class="inbox-detail-meta">From: <strong>${fromDisplay}</strong> &lt;${emailDisplay}&gt;<br>Received: ${new Date(r.received_at).toLocaleString()}</div>
     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin:16px 0">
-      <div style="font-size:11px;color:var(--text3);margin-bottom:6px">💬 ${fromDisplay} said:</div>
-      <div style="font-size:14px">${esc(newPart)}</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:6px">💬 Preview (headers only - MailFlows can't read the full message)</div>
+      <div style="font-size:14px">${esc(snippet) || '<span style="color:var(--text3);font-style:italic">No preview available - open in Gmail to read the full reply.</span>'}</div>
     </div>
-    ${quotedPart?`<details style="margin-bottom:20px"><summary style="font-size:12px;color:var(--text3);cursor:pointer">Show earlier message in this thread</summary><div style="font-size:12px;color:var(--text3);margin-top:8px;padding-left:12px;border-left:2px solid var(--border)">${esc(quotedPart)}</div></details>`:''}
-    <div style="font-size:11px;color:var(--text3);margin-bottom:16px;font-style:italic">Stored here for 90 days only, then automatically deleted for your privacy and security. This only shows genuine replies to emails sent through MailFlows via your connected Gmail account - not your whole Gmail inbox.</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:16px;font-style:italic">Detected via a genuine reply on a thread MailFlows sent. To read the full message, reply in Gmail - that's always the most accurate and reliable way to respond.</div>
     <div class="reply-box">
-      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px">Quick Reply</div>
-      <textarea id="replyTextarea" placeholder="Type your reply..." rows="5"></textarea>
-      <div class="reply-actions">
-        <button class="btn-sm btn-ghost" onclick="document.getElementById('replyTextarea').value=''">Clear</button>
-        <button class="btn-sm btn-accent" id="sendReplyBtn" onclick="sendReplyTo('${r.from_email}','RE: ${(r.subject||'').replace(/'/g,'&apos;')}')">Send Reply ↗</button>
+      <button class="btn-sm btn-accent" style="width:100%;margin-bottom:10px" onclick="openReplyInGmail('${(r.from_email||'').replace(/'/g,"\\'")}','${(r.subject||'').replace(/'/g,"\\'")}')">📧 Reply in Gmail ↗ (recommended)</button>
+      <button class="btn-sm btn-ghost" style="width:100%" id="suggestReplyBtn" onclick="loadSuggestedReply('${r.id}','${(r.from_email||'').replace(/'/g,"\\'")}','${(r.subject||'').replace(/'/g,"\\'")}')">💡 Suggest a reply draft</button>
+      <div id="suggestedReplyBox" style="display:none;margin-top:12px">
+        <textarea id="suggestedReplyText" rows="6" style="width:100%"></textarea>
+        <div style="font-size:11px;color:var(--text3);margin-top:6px;font-style:italic" id="suggestedReplyNote"></div>
+        <button class="btn-sm btn-accent" style="width:100%;margin-top:8px" onclick="useSuggestedReplyInGmail('${(r.from_email||'').replace(/'/g,"\\'")}','${(r.subject||'').replace(/'/g,"\\'")}')">Use this draft → Open in Gmail</button>
       </div>
     </div>
     <div style="margin-top:16px">
       <button class="btn-sm btn-danger" onclick="deleteReply('${r.id}')">🗑 Delete</button>
     </div>`;
   loadStats();
+}
+
+function gmailComposeUrl(toEmail, subject, body){
+  const params = new URLSearchParams({
+    view: 'cm', fs: '1', to: toEmail || '', su: subject ? ('Re: ' + subject.replace(/^Re:\s*/i,'')) : '', body: body || ''
+  });
+  return 'https://mail.google.com/mail/?' + params.toString();
+}
+
+function openReplyInGmail(toEmail, subject){
+  window.open(gmailComposeUrl(toEmail, subject, ''), '_blank');
+}
+
+async function loadSuggestedReply(replyId, toEmail, subject){
+  const box=document.getElementById('suggestedReplyBox');
+  const btn=document.getElementById('suggestReplyBtn');
+  box.style.display='block';
+  btn.disabled=true;
+  document.getElementById('suggestedReplyText').value='Generating a draft...';
+  try{
+    const res=await fetch(`${API}/inbox/replies/${replyId}/suggested-reply`,{headers: await authHeadersAsync()});
+    if(!res || !res.ok){ document.getElementById('suggestedReplyText').value=''; document.getElementById('suggestedReplyNote').textContent='Could not generate a draft.'; return; }
+    const data=await res.json();
+    document.getElementById('suggestedReplyText').value=data.draft||'';
+    document.getElementById('suggestedReplyNote').textContent=data.note||'';
+  } catch(e){
+    document.getElementById('suggestedReplyText').value='';
+    document.getElementById('suggestedReplyNote').textContent='Could not generate a draft.';
+  } finally { btn.disabled=false; }
+}
+
+function useSuggestedReplyInGmail(toEmail, subject){
+  const body=document.getElementById('suggestedReplyText').value;
+  window.open(gmailComposeUrl(toEmail, subject, body), '_blank');
 }
 
 async function deleteReply(id){
@@ -2770,34 +2973,9 @@ function closeReplyDetail(){
 }
 
 async function sendReplyTo(toEmail, subject){
-  const text=document.getElementById('replyTextarea')?.value.trim();
-  if(!text){alert('Please type a reply first');return;}
-  const btn=document.getElementById('sendReplyBtn');
-  const originalText=btn?btn.textContent:'';
-  if(btn){ btn.textContent='Sending...'; btn.disabled=true; }
-  try{
-    const accRes=await fetch(`${API}/gmail/accounts`,{headers: await authHeadersAsync()});
-    const accounts=await accRes.json();
-    const active=accounts.find(a=>a.is_active);
-    if(!active){
-      alert('No connected Gmail account found. Connect one in SMTP Settings first.');
-      if(btn){ btn.textContent=originalText; btn.disabled=false; }
-      return;
-    }
-    const res=await fetch(`${API}/gmail/send`,{
-      method:'POST', headers: await authHeadersAsync(),
-      body:JSON.stringify({account_id:active.id, to_email:toEmail, subject, body:text})
-    });
-    const data=await res.json();
-    if(res.ok){
-      alert('✅ Reply sent!');
-      document.getElementById('replyTextarea').value='';
-      loadStats();
-    } else {
-      alert('Error: '+(data.detail||'Could not send reply'));
-    }
-  } catch(e){ alert('Connection error sending reply'); }
-  if(btn){ btn.textContent=originalText; btn.disabled=false; }
+  // Deprecated: replaced by openReplyInGmail()/useSuggestedReplyInGmail() above.
+  // Kept as a no-op stub in case any old cached HTML/JS still references it.
+  alert('Please use "Reply in Gmail" or "Suggest a reply draft" instead.');
 }
 
 // ══════════════════════════════
