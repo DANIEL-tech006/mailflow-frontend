@@ -2814,7 +2814,7 @@ function updateBillingButtons(){
     freeBtn.onclick=null;
   } else if(plan==='personal'){
     freeBtn.textContent='Downgrade to Free';
-    freeBtn.onclick=()=>{ if(confirm('Downgrade to Free plan? You will lose access to Personal features at end of billing period.')) alert('To downgrade, contact support at support@mailflows.org'); };
+    freeBtn.onclick=()=>{ if(confirm('Downgrade to Free plan now? You will lose access to Personal features immediately.')) downgradeToFree(); };
     personalBtn.textContent='Current Plan ✓';
     personalBtn.style.background='var(--surface2)';
     personalBtn.style.color='var(--text)';
@@ -2846,12 +2846,33 @@ function handlePlanClick(plan){
   if(planRank[plan]>planRank[currentPlan]){
     // Upgrading
     startPayment(plan);
+  } else if(plan==='free'){
+    // Downgrading straight to Free - fully automatic, no support needed
+    if(confirm('Downgrade to Free plan now? You will lose access to paid features immediately.')) downgradeToFree();
   } else {
-    // Downgrading
+    // Downgrading between two paid plans (e.g. Corporate -> Personal) involves
+    // proration on the existing subscription, which isn't automated yet.
     if(confirm(`Downgrade to ${plan} plan? Your current features will continue until end of billing period.`)){
-      alert("To downgrade your plan, please email support@mailflows.org with your account email. We will process it within 24 hours.");
+      alert("Downgrading between paid plans isn't automated yet - use Contact Support and we'll process it within 24 hours.");
     }
   }
+}
+
+async function downgradeToFree(){
+  try{
+    const res=await fetch(`${API}/payments/downgrade`,{method:'POST',headers: await authHeadersAsync()});
+    const data=await res.json();
+    if(res.ok){
+      alert('✅ '+data.message);
+      const user=JSON.parse(localStorage.getItem('mf_user')||'{}');
+      user.plan='free';
+      localStorage.setItem('mf_user', JSON.stringify(user));
+      updateBillingInfo();
+      loadStats();
+    } else {
+      alert('Error: '+(data.detail||'Could not downgrade'));
+    }
+  } catch(e){ alert('Connection error - please try again.'); }
 }
 
 function cancelSubscription(){
