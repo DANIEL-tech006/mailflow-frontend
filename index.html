@@ -1143,6 +1143,10 @@ function loadDashboard(){
   document.querySelector('.nav-item').classList.add('active');
   loadStats();
   loadCampaigns();
+  checkNewAnnouncements();
+  // Automatically catch up on any replies that arrived since last login,
+  // instead of requiring a manual "Refresh" click every time.
+  setTimeout(()=>{ checkForReplies(true).catch(()=>{}); }, 1500);
   // Fetch fresh user data from backend to get correct limits
   fetchFreshUserData();
   setTimeout(updateBillingInfo, 500);
@@ -1452,7 +1456,6 @@ async function loadStats(){
       badge.style.display='none';
     }
     window._lastStats=data;
-    checkNewAnnouncements();
     const scraperEl=document.getElementById('scraperUsageText');
     if(scraperEl && data.scraper_limit!=null){
       let text=`${data.scraper_used} / ${data.scraper_limit} this month`;
@@ -1499,6 +1502,11 @@ if(!window._statsInterval){
   window._statsInterval=setInterval(()=>{
     if(document.getElementById('page-dashboard')?.classList.contains('active')) loadStats();
   }, 20000);
+}
+// Announcement badge check runs independently of which page you're on,
+// so it doesn't just sit stale while you're working in Contacts/Campaigns/etc.
+if(!window._announceInterval){
+  window._announceInterval=setInterval(checkNewAnnouncements, 45000);
 }
 
 // ══════════════════════════════
@@ -2048,27 +2056,31 @@ async function loadSentEmails(){
 // ══════════════════════════════
 // REPLIES
 // ══════════════════════════════
-async function checkForReplies(){
+async function checkForReplies(silent){
   const btn=document.getElementById('refreshRepliesBtn');
-  const originalText=btn.textContent;
-  btn.textContent='Checking...'; btn.disabled=true;
+  const originalText=btn ? btn.textContent : null;
+  if(btn){ btn.textContent='Checking...'; btn.disabled=true; }
   try{
     const res=await fetch(`${API}/gmail/check-replies`,{method:'POST',headers: await authHeadersAsync()});
     if(!res.ok){
-      const d=await res.json();
-      alert('Error checking replies: '+(d.detail||'Unknown error'));
+      if(!silent){
+        const d=await res.json().catch(()=>({}));
+        alert('Error checking replies: '+(d.detail||'Unknown error'));
+      }
     } else {
       const data=await res.json();
-      if(data.new_replies>0){
-        alert(`✅ Found ${data.new_replies} new repl${data.new_replies===1?'y':'ies'}!`);
-      } else {
-        alert('No new replies found.');
+      if(!silent){
+        if(data.new_replies>0){
+          alert(`✅ Found ${data.new_replies} new repl${data.new_replies===1?'y':'ies'}!`);
+        } else {
+          alert('No new replies found.');
+        }
       }
       loadReplies();
       loadStats();
     }
-  } catch(e){ alert('Connection error checking replies'); }
-  btn.textContent=originalText; btn.disabled=false;
+  } catch(e){ if(!silent) alert('Connection error checking replies'); }
+  if(btn){ btn.textContent=originalText; btn.disabled=false; }
 }
 
 async function loadReplies(){
