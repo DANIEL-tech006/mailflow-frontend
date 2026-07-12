@@ -1144,9 +1144,6 @@ function loadDashboard(){
   loadStats();
   loadCampaigns();
   checkNewAnnouncements();
-  // Automatically catch up on any replies that arrived since last login,
-  // instead of requiring a manual "Refresh" click every time.
-  setTimeout(()=>{ checkForReplies(true).catch(()=>{}); }, 1500);
   // Fetch fresh user data from backend to get correct limits
   fetchFreshUserData();
   setTimeout(updateBillingInfo, 500);
