@@ -354,7 +354,7 @@ tr:hover td{background:var(--surface2);}
       <div class="nav-item" onclick="showPage('scraper',this)"><span class="nav-icon">🔍</span> Email Scraper</div>
       <div class="nav-item" onclick="showPage('contacts',this)"><span class="nav-icon">👥</span> Contacts</div>
       <div class="nav-item" onclick="showPage('campaigns',this)"><span class="nav-icon">📤</span> Campaigns</div>
-      <div class="nav-item" onclick="showPage('announcements',this)"><span class="nav-icon">📢</span> Announcements</div>
+      <div class="nav-item" onclick="showPage('announcements',this)"><span class="nav-icon">📢</span> Announcements <span id="announcementBadge" class="nav-badge" style="display:none"></span></div>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-label">Inbox</div>
@@ -1227,6 +1227,29 @@ function renderMediaEmbed(a){
   return `<img src="${a.media_url}" style="width:100%;max-height:360px;object-fit:cover;border-radius:var(--radius);margin-top:12px">`;
 }
 
+async function checkNewAnnouncements(){
+  try{
+    const res=await fetch(`${API}/announcements`,{headers: await authHeadersAsync()});
+    if(!res || !res.ok) return;
+    const items=await res.json();
+    const badge=document.getElementById('announcementBadge');
+    if(!badge || !items.length) return;
+    const latest=new Date(items[0].created_at).getTime();
+    const lastSeen=parseInt(localStorage.getItem('mf_last_announcement_seen')||'0',10);
+    if(latest>lastSeen){
+      badge.style.display='inline';
+      badge.textContent='NEW';
+    } else {
+      badge.style.display='none';
+    }
+  } catch(e){}
+}
+function markAnnouncementsSeen(){
+  localStorage.setItem('mf_last_announcement_seen', Date.now().toString());
+  const badge=document.getElementById('announcementBadge');
+  if(badge) badge.style.display='none';
+}
+
 async function loadAnnouncementsFeed(){
   const container=document.getElementById('announcementsFeed');
   try{
@@ -1429,6 +1452,7 @@ async function loadStats(){
       badge.style.display='none';
     }
     window._lastStats=data;
+    checkNewAnnouncements();
     const scraperEl=document.getElementById('scraperUsageText');
     if(scraperEl && data.scraper_limit!=null){
       let text=`${data.scraper_used} / ${data.scraper_limit} this month`;
@@ -1498,7 +1522,7 @@ function showPage(pageId,navEl){
   if(pageId==='smtp'){ loadSmtpAccounts(); loadGmailAccounts(); }
   if(pageId==='billing') updateBillingInfo();
   if(pageId==='admin'){ loadAdminDashboard(); loadAdminAnnouncements(); loadAdminSupportTickets(); }
-  if(pageId==='announcements') loadAnnouncementsFeed();
+  if(pageId==='announcements'){ loadAnnouncementsFeed(); markAnnouncementsSeen(); }
   if(pageId==='quicksend') loadQuickSendSmtp();
 }
 
@@ -2885,8 +2909,8 @@ async function showReplyByIdx(el, idx){
   const subjectDisplay = (r.subject||'No subject').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const esc=(s)=>(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
 
-  // Gmail connection only has header access (gmail.metadata) - we know a reply
-  // arrived and can show a short snippet, but not the full body or quoted thread.
+  // Full reply body comes from our own reply-tracking domain (mailflows.org),
+  // captured independently of Gmail's API - so this is the real message, not a snippet.
   const snippet = r.body || '';
 
   document.getElementById('replyDetail').innerHTML=`
@@ -2899,20 +2923,46 @@ async function showReplyByIdx(el, idx){
     </div>
     <div class="inbox-detail-meta">From: <strong>${fromDisplay}</strong> &lt;${emailDisplay}&gt;<br>Received: ${new Date(r.received_at).toLocaleString()}</div>
     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin:16px 0">
-      <div style="font-size:11px;color:var(--text3);margin-bottom:6px">💬 Preview (headers only - MailFlows can't read the full message)</div>
-      <div style="font-size:14px">${esc(snippet) || '<span style="color:var(--text3);font-style:italic">No preview available - open in Gmail to read the full reply.</span>'}</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:6px">💬 Message</div>
+      <div style="font-size:14px">${esc(snippet) || '<span style="color:var(--text3);font-style:italic">Message content was not captured - open in Gmail to see it.</span>'}</div>
     </div>
-    <div style="font-size:11px;color:var(--text3);margin-bottom:16px;font-style:italic">Detected via a genuine reply on a thread MailFlows sent. Kept for 90 days, then auto-deleted. To read the full message, reply in Gmail - that's always the most accurate and reliable way to respond.</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:16px;font-style:italic">Kept for 90 days, then auto-deleted.</div>
     <div class="reply-box">
-      <button class="btn-sm btn-accent" style="width:100%;margin-bottom:10px" onclick="openReplyInGmail('${(r.from_email||'').replace(/'/g,"\\'")}','${(r.subject||'').replace(/'/g,"\\'")}')">📧 Reply in Gmail ↗ (recommended)</button>
-      <button class="btn-sm btn-ghost" style="width:100%" id="suggestReplyBtn" onclick="loadSuggestedReply('${r.id}','${(r.from_email||'').replace(/'/g,"\\'")}','${(r.subject||'').replace(/'/g,"\\'")}')">💡 Suggest a reply draft</button>
-      <div id="suggestedReplyBox" style="display:none;margin-top:12px">
-        <textarea id="suggestedReplyText" rows="6" style="width:100%"></textarea>
-        <div style="font-size:11px;color:var(--text3);margin-top:6px;font-style:italic" id="suggestedReplyNote"></div>
-        <button class="btn-sm btn-accent" style="width:100%;margin-top:8px" onclick="useSuggestedReplyInGmail('${(r.from_email||'').replace(/'/g,"\\'")}','${(r.subject||'').replace(/'/g,"\\'")}')">Use this draft → Open in Gmail</button>
-      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Sending here keeps this conversation trackable - if they reply again, you'll see it too. Opening in Gmail instead sends it outside MailFlows, so any further reply from them won't be captured.</div>
+      <textarea id="sendReplyText" rows="6" style="width:100%;margin-bottom:8px" placeholder="Type your reply..."></textarea>
+      <button class="btn-sm btn-ghost" style="width:100%;margin-bottom:8px" id="suggestReplyBtn" onclick="loadSuggestedReply('${r.id}','${(r.from_email||'').replace(/'/g,"\\'")}','${(r.subject||'').replace(/'/g,"\\'")}')">💡 Suggest a draft</button>
+      <div id="suggestedReplyNote" style="font-size:11px;color:var(--text3);margin-bottom:8px;font-style:italic"></div>
+      <button class="btn-sm btn-accent" style="width:100%;margin-bottom:10px" onclick="sendTrackedReply('${r.id}','${(r.from_email||'').replace(/'/g,"\\'")}','${(r.subject||'').replace(/'/g,"\\'")}')">✅ Send Reply (recommended)</button>
+      <button class="btn-sm btn-ghost" style="width:100%" onclick="openReplyInGmail('${(r.from_email||'').replace(/'/g,"\\'")}','${(r.subject||'').replace(/'/g,"\\'")}')">📧 Open in Gmail instead ↗</button>
     </div>`;
   loadStats();
+}
+
+async function sendTrackedReply(replyId, toEmail, subject){
+  const body=document.getElementById('sendReplyText').value.trim();
+  if(!body){ alert('Type a reply first.'); return; }
+  const btn=event.target;
+  const originalText=btn.textContent;
+  btn.textContent='Sending...'; btn.disabled=true;
+  try{
+    const accRes=await fetch(`${API}/gmail/accounts`,{headers: await authHeadersAsync()});
+    const accounts=accRes.ok ? await accRes.json() : [];
+    if(!accounts.length){ alert('No connected Gmail account - connect one in SMTP Settings first.'); btn.textContent=originalText; btn.disabled=false; return; }
+    const res=await fetch(`${API}/gmail/send-reply`,{
+      method:'POST', headers: await authHeadersAsync(),
+      body: JSON.stringify({
+        account_id: accounts[0].id,
+        to_email: toEmail,
+        subject: subject.match(/^Re:/i) ? subject : ('Re: '+subject),
+        body: body
+      })
+    });
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok){ alert('Could not send: '+(data.detail||'unknown error')); btn.textContent=originalText; btn.disabled=false; return; }
+    alert('Reply sent to '+toEmail);
+    document.getElementById('sendReplyText').value='';
+  } catch(e){ alert('Connection error sending reply.'); }
+  btn.textContent=originalText; btn.disabled=false;
 }
 
 function gmailComposeUrl(toEmail, subject, body){
@@ -2927,26 +2977,22 @@ function openReplyInGmail(toEmail, subject){
 }
 
 async function loadSuggestedReply(replyId, toEmail, subject){
-  const box=document.getElementById('suggestedReplyBox');
   const btn=document.getElementById('suggestReplyBtn');
-  box.style.display='block';
+  const noteEl=document.getElementById('suggestedReplyNote');
+  const textEl=document.getElementById('sendReplyText');
   btn.disabled=true;
-  document.getElementById('suggestedReplyText').value='Generating a draft...';
+  const original=textEl.value;
+  textEl.value='Generating a draft...';
   try{
     const res=await fetch(`${API}/inbox/replies/${replyId}/suggested-reply`,{headers: await authHeadersAsync()});
-    if(!res || !res.ok){ document.getElementById('suggestedReplyText').value=''; document.getElementById('suggestedReplyNote').textContent='Could not generate a draft.'; return; }
+    if(!res || !res.ok){ textEl.value=original; noteEl.textContent='Could not generate a draft.'; return; }
     const data=await res.json();
-    document.getElementById('suggestedReplyText').value=data.draft||'';
-    document.getElementById('suggestedReplyNote').textContent=data.note||'';
+    textEl.value=data.draft||'';
+    noteEl.textContent=data.note||'';
   } catch(e){
-    document.getElementById('suggestedReplyText').value='';
-    document.getElementById('suggestedReplyNote').textContent='Could not generate a draft.';
+    textEl.value=original;
+    noteEl.textContent='Could not generate a draft.';
   } finally { btn.disabled=false; }
-}
-
-function useSuggestedReplyInGmail(toEmail, subject){
-  const body=document.getElementById('suggestedReplyText').value;
-  window.open(gmailComposeUrl(toEmail, subject, body), '_blank');
 }
 
 async function deleteReply(id){
