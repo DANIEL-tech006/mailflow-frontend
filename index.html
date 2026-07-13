@@ -440,12 +440,12 @@ tr:hover td{background:var(--surface2);}
 
     <!-- ══ SCRAPER ══ -->
     <div class="page-content" id="page-scraper">
-      <div class="card" style="margin-bottom:12px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-        <span style="font-size:12px;color:var(--text2)">Monthly scraper usage</span>
-        <div style="display:flex;align-items:center;gap:12px">
-          <span id="scraperUsageText" style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text)">— / —</span>
+      <div class="card" style="margin-bottom:20px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <div class="card-title" style="margin-bottom:0">⚡ Credit Usage This Month</div>
           <button class="btn-sm btn-ghost" style="font-size:11px;padding:5px 10px" onclick="openBuyCreditsModal()">⚡ Buy More</button>
         </div>
+        <div id="creditSummaryBox" style="margin-top:12px;font-size:13px;color:var(--text3)">Loading...</div>
       </div>
       <div class="card" style="margin-bottom:20px">
         <div class="card-title">🔍 Email Scraper</div>
@@ -703,11 +703,6 @@ tr:hover td{background:var(--surface2);}
         </div>
       </div>
 
-      <div class="card" style="margin-bottom:24px">
-        <div class="card-title">⚡ Credit Usage This Month</div>
-        <div id="creditSummaryBox" style="margin-top:12px;font-size:13px;color:var(--text3)">Loading...</div>
-      </div>
-
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
         <span style="font-size:14px;font-weight:600;color:var(--text)">Currency:</span>
         <div style="display:flex;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;overflow:hidden">
@@ -844,10 +839,14 @@ tr:hover td{background:var(--surface2);}
 <div class="modal-overlay" id="buyCreditsModal">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">⚡ Buy Scraper Credits</div>
+      <div class="modal-title" id="buyCreditsModalTitle">⚡ Buy Credits</div>
       <button class="modal-close" onclick="closeBuyCreditsModal()">✕</button>
     </div>
-    <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Out of monthly scraper credits? Top up instantly — these never expire and carry over month to month. (1 credit = 1 real email found. Note: bonus credits extend scraping only, not email verification, which is fixed monthly per plan.)</div>
+    <div style="display:flex;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;overflow:hidden;margin-bottom:16px">
+      <button id="creditTabScraper" onclick="switchCreditTab('scraper')" style="flex:1;padding:10px;border:none;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;cursor:pointer;background:var(--accent);color:#000">🔍 Scraper Credits</button>
+      <button id="creditTabVerification" onclick="switchCreditTab('verification')" style="flex:1;padding:10px;border:none;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:var(--text2)">✅ Verification Credits</button>
+    </div>
+    <div id="creditTabDescription" style="font-size:13px;color:var(--text2);margin-bottom:16px"></div>
     <div id="creditBalanceBar" style="font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-dim);border-radius:var(--radius);padding:8px 12px;margin-bottom:14px"></div>
     <div id="creditPacksList" style="display:flex;flex-direction:column;gap:10px">
       <div style="text-align:center;padding:20px;color:var(--text3)">Loading packs...</div>
@@ -1526,6 +1525,7 @@ function showPage(pageId,navEl){
   if(pageId==='replies') loadReplies();
   if(pageId==='smtp'){ loadSmtpAccounts(); loadGmailAccounts(); }
   if(pageId==='billing') updateBillingInfo();
+  if(pageId==='scraper') loadCreditSummary();
   if(pageId==='admin'){ loadAdminDashboard(); loadAdminAnnouncements(); loadAdminSupportTickets(); }
   if(pageId==='announcements'){ loadAnnouncementsFeed(); markAnnouncementsSeen(); }
   if(pageId==='quicksend') loadQuickSendSmtp();
@@ -1741,6 +1741,7 @@ async function runScraper(){
       scraperResults=data.results||[];
       displayScraperResults(niche);
       loadStats();
+      loadCreditSummary();
     } else {
       if(res.status===403){
         if(confirm((data.detail||'Scraper limit reached')+'\n\nBuy more credits now?')){
@@ -1911,7 +1912,13 @@ async function verifySelectedContacts(){
     });
     const data=await res.json();
     if(!res.ok){
-      alert('Error: '+(data.detail||'Verification failed'));
+      if(res.status===403){
+        if(confirm((data.detail||'Verification limit reached')+'\n\nBuy more verification credits now?')){
+          openBuyCreditsModal('verification');
+        }
+      } else {
+        alert('Error: '+(data.detail||'Verification failed'));
+      }
     } else if(data.verified===0){
       alert('Nothing to verify — select some unverified contacts first, or all contacts are already checked.');
     } else {
@@ -1919,6 +1926,7 @@ async function verifySelectedContacts(){
       alert(`✅ Verified ${data.verified} contacts:\n${r.valid||0} valid, ${r.risky||0} risky, ${r.invalid||0} invalid, ${r.unknown||0} unknown`);
     }
     loadContacts();
+    loadCreditSummary();
   } catch(e){ alert('Error verifying contacts'); }
   btn.textContent=originalText; btn.disabled=false;
 }
@@ -2290,23 +2298,49 @@ function setCurrency(currency){
   document.getElementById('price-corporate').innerHTML=(isNGN?'₦24,000':'$15')+'<span>/mo</span>';
 }
 
-async function openBuyCreditsModal(){
+let _creditModalTab='scraper';
+
+async function openBuyCreditsModal(tab){
+  _creditModalTab=tab||'scraper';
   document.getElementById('buyCreditsModal').classList.add('open');
+  await renderCreditTab();
+}
+
+function switchCreditTab(tab){
+  _creditModalTab=tab;
+  renderCreditTab();
+}
+
+async function renderCreditTab(){
+  const isScraperTab=_creditModalTab==='scraper';
+  document.getElementById('creditTabScraper').style.background=isScraperTab?'var(--accent)':'transparent';
+  document.getElementById('creditTabScraper').style.color=isScraperTab?'#000':'var(--text2)';
+  document.getElementById('creditTabVerification').style.background=isScraperTab?'transparent':'var(--accent)';
+  document.getElementById('creditTabVerification').style.color=isScraperTab?'var(--text2)':'#000';
+  document.getElementById('buyCreditsModalTitle').textContent=isScraperTab?'⚡ Buy Scraper Credits':'⚡ Buy Verification Credits';
+  document.getElementById('creditTabDescription').textContent=isScraperTab
+    ? 'Out of monthly scraper credits? Top up instantly — these never expire and carry over month to month. (1 credit = 1 real email found.)'
+    : 'Out of monthly verification credits? Top up instantly — these never expire and carry over month to month. (1 credit = 1 email verified.)';
+
   const balanceEl=document.getElementById('creditBalanceBar');
-  if(balanceEl){
-    const s=window._lastStats;
-    if(s && s.scraper_limit!=null){
-      const monthlyLeft=Math.max((s.scraper_limit||0)-(s.scraper_used||0),0);
-      const bonus=s.scraper_bonus_credits||0;
-      balanceEl.textContent=`You have ${monthlyLeft+bonus} email credits available (${monthlyLeft} monthly + ${bonus} bonus)`;
-    } else {
-      balanceEl.textContent='';
-    }
-  }
   const list=document.getElementById('creditPacksList');
+  balanceEl.textContent='';
   list.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3)">Loading packs...</div>';
+
   try{
-    const res=await fetch(`${API}/payments/credit-packs`);
+    const summaryRes=await fetch(`${API}/payments/credit-summary`,{headers: await authHeadersAsync()});
+    if(summaryRes.ok){
+      const summary=await summaryRes.json();
+      const d=isScraperTab?summary.scraper:summary.verification;
+      const monthlyLeft=Math.max(d.monthly_limit-d.monthly_used,0);
+      const bonus=d.bonus_credits||0;
+      balanceEl.textContent=`You have ${monthlyLeft+bonus} ${isScraperTab?'email':'verification'} credits available (${monthlyLeft} monthly + ${bonus} bonus)`;
+    }
+  } catch(e){ /* balance is a nice-to-have, don't block pack loading on it */ }
+
+  try{
+    const packsEndpoint=isScraperTab?'/payments/credit-packs':'/payments/verification-credit-packs';
+    const res=await fetch(`${API}${packsEndpoint}`);
     const packs=await res.json();
     const isNGN=(typeof selectedCurrency!=='undefined'?selectedCurrency:'NGN')==='NGN';
     const labels={small:'Starter Pack',medium:'Growth Pack',large:'Bulk Pack'};
@@ -2315,7 +2349,7 @@ async function openBuyCreditsModal(){
       return `<div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px">
         <div>
           <div style="font-weight:600;font-size:14px">${labels[key]||key}</div>
-          <div style="font-size:12px;color:var(--text2)">${p.credits} email credits</div>
+          <div style="font-size:12px;color:var(--text2)">${p.credits} ${isScraperTab?'email':'verification'} credits</div>
         </div>
         <button class="btn-sm btn-accent" onclick="buyCreditsPack('${key}')">${price}</button>
       </div>`;
@@ -2421,8 +2455,9 @@ async function sendTicketReply(id){
 
 async function buyCreditsPack(pack){
   const currency=(typeof selectedCurrency!=='undefined'?selectedCurrency:'NGN');
+  const endpoint=_creditModalTab==='scraper' ? '/payments/buy-credits' : '/payments/buy-verification-credits';
   try{
-    const res=await fetch(`${API}/payments/buy-credits`,{
+    const res=await fetch(`${API}${endpoint}`,{
       method:'POST', headers: await authHeadersAsync(),
       body:JSON.stringify({pack,currency})
     });
@@ -3074,7 +3109,6 @@ function updateBillingInfo(){
     else expiryEl.textContent='Upgrade to unlock more features';
   }
   updateBillingButtons();
-  loadCreditSummary();
 }
 
 async function loadCreditSummary(){
@@ -3103,7 +3137,7 @@ async function loadCreditSummary(){
         <div>
           <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:4px"><span>✅ Verification credits</span><span>${v.monthly_used}/${v.monthly_limit}</span></div>
           <div class="progress-bar"><div class="progress-fill" style="width:${Math.min((v.monthly_used/Math.max(v.monthly_limit,1))*100,100)}%"></div></div>
-          <div style="font-size:11px;color:var(--text3);margin-top:4px">Fixed monthly - bonus credits don't extend this</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">+ ${v.bonus_credits} bonus credit${v.bonus_credits===1?'':'s'} (never expire)</div>
         </div>
       </div>
       <div style="font-size:11px;color:var(--text3);font-weight:600;margin-bottom:6px;letter-spacing:.5px">RECENT PURCHASES</div>
