@@ -1063,6 +1063,7 @@ function initAdminPage(){
     document.getElementById('adminPinLock').style.display='none';
     document.getElementById('adminUnlockedBody').style.display='block';
     loadAdminDashboard(); loadAdminAnnouncements(); loadAdminSupportTickets();
+    markAdminAlertsSeen();
   } else {
     document.getElementById('adminPinLock').style.display='block';
     document.getElementById('adminUnlockedBody').style.display='none';
@@ -1259,18 +1260,31 @@ async function checkAdminAccess(){
 
 async function checkAdminAlerts(){
   try{
-    const res=await fetch(`${API}/admin/alerts-summary`,{headers: await authHeadersAsync()});
+    const since=localStorage.getItem('mf_admin_last_seen') || new Date(Date.now()-24*60*60*1000).toISOString();
+    const res=await fetch(`${API}/admin/alerts-summary?since=${encodeURIComponent(since)}`,{headers: await authHeadersAsync()});
     if(!res.ok) return;
     const data=await res.json();
     const badge=document.getElementById('adminAlertBadge');
     if(data.total>0){
       badge.style.display='inline-block';
       badge.textContent=data.total;
-      badge.title=`${data.open_tickets} open support ticket(s), ${data.recent_payments_24h} payment(s) in last 24h`;
+      const parts=[];
+      if(data.new_users) parts.push(`${data.new_users} new user(s)`);
+      if(data.new_payments) parts.push(`${data.new_payments} new payment(s)`);
+      if(data.new_tickets) parts.push(`${data.new_tickets} new ticket(s)`);
+      if(data.reopened_tickets) parts.push(`${data.reopened_tickets} ticket(s) need a reply`);
+      if(data.users_running_low) parts.push('some users are close to their credit limits');
+      badge.title=parts.join(', ');
     } else {
       badge.style.display='none';
     }
   } catch(e){ /* alert badge is a nice-to-have */ }
+}
+
+function markAdminAlertsSeen(){
+  localStorage.setItem('mf_admin_last_seen', new Date().toISOString());
+  const badge=document.getElementById('adminAlertBadge');
+  if(badge) badge.style.display='none';
 }
 
 async function loadAdminDashboard(){
@@ -1284,7 +1298,21 @@ async function loadAdminDashboard(){
     }
     const d=await res.json();
     const usedPct=d.scraper_credits_max_possible>0?Math.round(d.scraper_credits_used_this_month/d.scraper_credits_max_possible*100):0;
-    container.innerHTML=`
+
+    let lowLimitBanner='';
+    try{
+      const alertsRes=await fetch(`${API}/admin/alerts-summary?since=1970-01-01T00:00:00`,{headers: await adminHeadersAsync()});
+      if(alertsRes.ok){
+        const alerts=await alertsRes.json();
+        if(alerts.users_running_low>0){
+          lowLimitBanner=`<div class="card" style="margin-bottom:24px;border-color:var(--warning,#d29922)">
+            <div style="font-size:13px">⚠️ <b>${alerts.users_running_low} user(s)</b> are within 10% of their scraper or verification limit right now.</div>
+          </div>`;
+        }
+      }
+    } catch(e){ /* nice-to-have */ }
+
+    container.innerHTML=lowLimitBanner+`
       <div class="stats-grid" style="margin-bottom:24px">
         <div class="stat-card"><div class="stat-label">Total Users</div><div class="stat-value">${d.total_users}</div></div>
         <div class="stat-card"><div class="stat-label">Monthly Revenue (USD)</div><div class="stat-value">$${d.revenue_usd_monthly.toLocaleString()}</div></div>
