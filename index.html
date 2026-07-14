@@ -2821,9 +2821,14 @@ window.addEventListener('load',async ()=>{
           setTimeout(()=>alert('✅ '+data.message),800);
         } else if(data.credits_added){
           window.history.replaceState({},'',window.location.pathname);
+          currentUser=JSON.parse(localStorage.getItem('mf_user')||'null');
           loadDashboard();
           setTimeout(()=>alert(data.message),800);
-        } else { loadDashboard(); }
+        } else {
+          currentUser=JSON.parse(localStorage.getItem('mf_user')||'null');
+          loadDashboard();
+          if(data.credit_grant_failed) setTimeout(()=>alert('⚠️ '+data.message),800);
+        }
       }).catch(()=>{ currentUser=JSON.parse(localStorage.getItem('mf_user')||'null'); if(currentUser) loadDashboard(); });
       return;
     }
