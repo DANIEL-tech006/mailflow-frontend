@@ -544,7 +544,7 @@ tr:hover td{background:var(--surface2);}
         <div class="inbox-list">
           <div class="inbox-tabs" style="display:flex;align-items:center;justify-content:space-between;padding-right:10px">
             <div class="inbox-tab active" style="flex:1">💬 Replies</div>
-            <button class="btn-sm btn-ghost" id="refreshRepliesBtn" onclick="loadReplies()" style="white-space:nowrap">🔄 Refresh</button>
+            <button class="btn-sm btn-ghost" id="refreshRepliesBtn" onclick="manualRefreshReplies()" style="white-space:nowrap">🔄 Refresh</button>
           </div>
           <div style="padding:10px 16px;font-size:11px;color:var(--text3);border-bottom:1px solid var(--border)">Replies arrive automatically as soon as they land in your inbox. Only shows replies to emails sent through MailFlows via your connected Gmail. Kept for 90 days, then auto-deleted.</div>
           <div id="repliesList"><div style="text-align:center;padding:40px;color:var(--text3);font-size:13px">Loading replies...</div></div>
@@ -2243,15 +2243,34 @@ async function checkForReplies(silent){
   if(btn){ btn.textContent=originalText; btn.disabled=false; }
 }
 
+async function manualRefreshReplies(){
+  const btn=document.getElementById('refreshRepliesBtn');
+  const originalHTML=btn.innerHTML;
+  btn.innerHTML='⏳ Refreshing...';
+  btn.disabled=true;
+  const beforeCount=(window._replies||[]).length;
+  const ok=await loadReplies();
+  const afterCount=(window._replies||[]).length;
+  if(!ok){
+    btn.innerHTML='⚠️ Failed';
+  } else if(afterCount>beforeCount){
+    btn.innerHTML=`✅ +${afterCount-beforeCount} new`;
+  } else {
+    btn.innerHTML='✅ Up to date';
+  }
+  setTimeout(()=>{ btn.innerHTML=originalHTML; btn.disabled=false; }, 1800);
+}
+
 async function loadReplies(){
   try{
     const res=await fetch(`${API}/inbox/replies`,{headers: await authHeadersAsync()});
-    if(!res.ok) return;
+    if(!res.ok) return false;
     const replies=await res.json();
     const list=document.getElementById('repliesList');
     if(!replies.length){
       list.innerHTML='<div style="text-align:center;padding:60px;color:var(--text3);font-size:13px"><div style="font-size:40px;margin-bottom:12px;opacity:.4">💬</div>No replies yet.<br>Start campaigns to receive replies.</div>';
-      return;
+      window._replies=[];
+      return true;
     }
     // Store replies globally for safe click access
     window._replies = replies;
@@ -2264,7 +2283,8 @@ async function loadReplies(){
         <div class="inbox-item-subject">${(r.subject||'No subject').substring(0,50)}</div>
         <div class="inbox-item-preview">${(r.body||'').substring(0,80)}</div>
       </div>`).join('');
-  } catch(e){ console.error('Replies error',e); }
+    return true;
+  } catch(e){ console.error('Replies error',e); return false; }
 }
 
 // showReplyDetail replaced by showReplyByIdx
