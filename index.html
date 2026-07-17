@@ -2262,11 +2262,20 @@ async function manualRefreshReplies(){
   setTimeout(()=>{ btn.innerHTML=originalHTML; btn.disabled=false; }, 1800);
 }
 
+let _repliesRequestId = 0;
+
 async function loadReplies(){
+  const thisRequestId = ++_repliesRequestId;
   try{
     const res=await fetch(`${API}/inbox/replies`,{headers: await authHeadersAsync()});
+    // If a newer loadReplies() call has started since this one began, drop this
+    // result - it's stale and would otherwise silently overwrite a fresher render
+    // (this is what was happening when Refresh and the page's own auto-load raced
+    // against each other, especially with an inconsistent/cold-starting backend).
+    if(thisRequestId !== _repliesRequestId) return true;
     if(!res.ok) return false;
     const replies=await res.json();
+    if(thisRequestId !== _repliesRequestId) return true;
     const list=document.getElementById('repliesList');
     if(!replies.length){
       list.innerHTML='<div style="text-align:center;padding:60px;color:var(--text3);font-size:13px"><div style="font-size:40px;margin-bottom:12px;opacity:.4">💬</div>No replies yet.<br>Start campaigns to receive replies.</div>';
