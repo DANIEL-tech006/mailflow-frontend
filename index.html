@@ -1422,7 +1422,7 @@ async function loadAdminSupportTickets(){
     const tickets=await res.json();
     if(!tickets.length){ container.innerHTML='<div style="color:var(--text3);font-size:13px">No support tickets yet.</div>'; return; }
     const statusColor={open:'var(--warning)',answered:'#4ade80',closed:'var(--text3)'};
-    container.innerHTML = tickets.map(t=>`
+    const rows = tickets.map(t=>`
       <div style="padding:12px 0;border-bottom:1px solid var(--border)">
         <div style="display:flex;justify-content:space-between;gap:10px;cursor:pointer" onclick="toggleAdminTicket('${t.id}')">
           <div>
@@ -1432,7 +1432,8 @@ async function loadAdminSupportTickets(){
           <div style="font-size:11px;font-weight:700;color:${statusColor[t.status]||'var(--text3)'};text-transform:uppercase;flex-shrink:0">${t.status}</div>
         </div>
         <div id="adminTicketBody-${t.id}" style="display:none;margin-top:10px"></div>
-      </div>`).join('');
+      </div>`);
+    container.innerHTML = renderCollapsibleList(rows, 'admin-support-tickets');
   } catch(e){ container.innerHTML='<div style="color:var(--text3);font-size:13px">Could not load tickets.</div>'; }
 }
 
@@ -2514,12 +2515,10 @@ async function renderCreditTab(){
       balanceEl.textContent=`You have ${monthlyLeft+bonus} ${isScraperTab?'email':'verification'} credits available (${monthlyLeft} monthly + ${bonus} bonus)`;
 
       const prefix=isScraperTab?'credit_topup_':'verification_credit_topup_';
-      const relevant=(summary.purchase_history||[]).filter(p=>(p.plan||'').startsWith(prefix)).slice(0,3);
+      const relevant=(summary.purchase_history||[]).filter(p=>(p.plan||'').startsWith(prefix)).slice(0,6);
       if(relevant.length){
         const packLabels={small:'Starter',medium:'Growth',large:'Bulk'};
-        recentEl.innerHTML=`<div style="font-size:11px;color:var(--text3);margin-bottom:6px">Recently bought</div>
-          <div style="display:flex;flex-direction:column;gap:4px">
-          ${relevant.map(p=>{
+        const rows=relevant.map(p=>{
             const packKey=(p.plan||'').replace(prefix,'');
             const label=packLabels[packKey]||packKey;
             const amt=(p.currency==='NGN'?'₦'+(p.amount/100).toLocaleString():'$'+(p.amount/100).toLocaleString());
@@ -2527,8 +2526,9 @@ async function renderCreditTab(){
             return `<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);padding:4px 0;border-bottom:1px solid var(--border)">
               <span>${label} pack</span><span>${amt} · ${when}</span>
             </div>`;
-          }).join('')}
-          </div>`;
+        });
+        recentEl.innerHTML=`<div style="font-size:11px;color:var(--text3);margin-bottom:6px">Recently bought</div>
+          <div style="display:flex;flex-direction:column;gap:4px">${renderCollapsibleList(rows, 'recent-'+(isScraperTab?'scraper':'verify'))}</div>`;
       }
     }
   } catch(e){ /* balance/history is a nice-to-have, don't block pack loading on it */ }
@@ -3317,6 +3317,24 @@ function updateBillingInfo(){
   updateBillingButtons();
 }
 
+// Reusable "show first N, then View more" collapsible list. rowsHtml is an array of
+// pre-rendered HTML strings (one per item); containerId is a unique id for the toggle state.
+function renderCollapsibleList(rowsHtml, containerId, visibleCount=2){
+  if(!rowsHtml.length) return '<div style="color:var(--text3);font-size:12px">Nothing here yet.</div>';
+  const visible=rowsHtml.slice(0,visibleCount).join('');
+  const hidden=rowsHtml.slice(visibleCount);
+  if(!hidden.length) return visible;
+  const hiddenId=`hidden-${containerId}`;
+  return `${visible}
+    <div id="${hiddenId}" style="display:none">${hidden.join('')}</div>
+    <button class="btn-sm btn-ghost" style="width:100%;margin-top:6px;font-size:11px" onclick="
+      const h=document.getElementById('${hiddenId}');
+      const isHidden=h.style.display==='none';
+      h.style.display=isHidden?'block':'none';
+      this.textContent=isHidden?'▲ Show less':'▼ View ${hidden.length} more';
+    ">▼ View ${hidden.length} more</button>`;
+}
+
 async function loadCreditSummary(){
   const box=document.getElementById('creditSummaryBox');
   if(!box) return;
@@ -3332,22 +3350,29 @@ async function loadCreditSummary(){
         <span style="color:var(--text2)">${date} · ${(p.plan||'purchase')}</span>
         <span style="color:${p.status==='success'?'var(--success)':'var(--text3)'}">${amt} · ${p.status}</span>
       </div>`;
-    }).join('') || '<div style="color:var(--text3);font-size:12px">No purchases yet.</div>';
+    });
+    const historyHtml=renderCollapsibleList(historyRows, 'credit-summary-history');
     box.innerHTML=`
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
         <div>
           <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:4px"><span>🔍 Scraper credits</span><span>${s.monthly_used}/${s.monthly_limit}</span></div>
           <div class="progress-bar"><div class="progress-fill" style="width:${Math.min((s.monthly_used/Math.max(s.monthly_limit,1))*100,100)}%"></div></div>
-          <div style="font-size:11px;color:var(--text3);margin-top:4px">+ ${s.bonus_credits} bonus credit${s.bonus_credits===1?'':'s'} (never expire)</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
+            <span id="scraperBonusBadge" style="display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:var(--accent-dim);color:var(--accent);font-size:11px;font-weight:700">${s.bonus_credits}</span>
+            <span style="font-size:11px;color:var(--text3)">bonus credit${s.bonus_credits===1?'':'s'} (never expire, used after your monthly plan runs out)</span>
+          </div>
         </div>
         <div>
           <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:4px"><span>✅ Verification credits</span><span>${v.monthly_used}/${v.monthly_limit}</span></div>
           <div class="progress-bar"><div class="progress-fill" style="width:${Math.min((v.monthly_used/Math.max(v.monthly_limit,1))*100,100)}%"></div></div>
-          <div style="font-size:11px;color:var(--text3);margin-top:4px">+ ${v.bonus_credits} bonus credit${v.bonus_credits===1?'':'s'} (never expire)</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
+            <span id="verifyBonusBadge" style="display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:var(--accent-dim);color:var(--accent);font-size:11px;font-weight:700">${v.bonus_credits}</span>
+            <span style="font-size:11px;color:var(--text3)">bonus credit${v.bonus_credits===1?'':'s'} (never expire, used after your monthly plan runs out)</span>
+          </div>
         </div>
       </div>
       <div style="font-size:11px;color:var(--text3);font-weight:600;margin-bottom:6px;letter-spacing:.5px">RECENT PURCHASES</div>
-      ${historyRows}`;
+      ${historyHtml}`;
   } catch(e){
     box.textContent='Could not load credit usage.';
   }
