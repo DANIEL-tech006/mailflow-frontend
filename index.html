@@ -1191,10 +1191,14 @@ function handleLogout(){
   localStorage.removeItem('mf_token');
   localStorage.removeItem('mf_refresh_token');
   localStorage.removeItem('mf_user');
-  currentUser=null;
-  document.getElementById('appWrap').style.display='none';
-  document.getElementById('authWrap').style.display='grid';
-  setFaqChatVisible(false);
+  sessionStorage.clear(); // clears the admin PIN session too, so it never leaks to a different account in the same tab
+  // Full reload, not just a UI toggle - this was the real bug: logging out never
+  // cleared cached JS state (window._replies, window._lastStats, rendered DOM lists),
+  // so logging into a DIFFERENT account could briefly show the PREVIOUS account's
+  // data until each page's fresh fetch happened to overwrite it. A reload guarantees
+  // a completely clean slate every time instead of relying on remembering to clear
+  // every cache variable individually.
+  window.location.href = window.location.pathname;
 }
 
 // ══════════════════════════════
@@ -2937,7 +2941,7 @@ async function sendQuickEmail(){
     // Send single email via connected Gmail account
     const testRes=await fetch(`${API}/gmail/send`,{
       method:'POST', headers: await authHeadersAsync(),
-      body:JSON.stringify({account_id:smtpId, to_email:to, subject, body, from_name:fromName})
+      body:JSON.stringify({account_id:smtpId, to_email:to, subject, body, from_name:fromName, campaign_id:createdCampaign.id})
     });
     const testData=await testRes.json();
     if(testRes.ok){
