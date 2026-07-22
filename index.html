@@ -151,7 +151,7 @@ tr:hover td{background:var(--surface2);}
 .inbox-tabs{display:flex;border-bottom:1px solid var(--border);}
 .inbox-tab{flex:1;padding:12px;text-align:center;font-size:13px;font-weight:600;font-family:'Syne',sans-serif;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;transition:all .15s;}
 .inbox-tab.active{color:var(--accent);border-bottom-color:var(--accent);background:var(--accent-dim);}
-.inbox-item{padding:14px 18px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;min-width:0;}
+.inbox-item{padding:14px 18px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;min-width:0;-webkit-tap-highlight-color:transparent;}
 .inbox-item:hover{background:var(--surface2);}
 .inbox-item.active{background:var(--accent-dim);border-left:3px solid var(--accent);}
 .inbox-item-header{display:flex;justify-content:space-between;gap:8px;margin-bottom:3px;}
@@ -190,11 +190,13 @@ tr:hover td{background:var(--surface2);}
 .contact-group-info p{font-size:12px;color:var(--text2);}
 
 /* BILLING */
-.billing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:960px;}
+.billing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:960px;align-items:stretch;}
+.billing-grid .card{display:flex;flex-direction:column;}
 .billing-plan-name{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:4px;}
 .billing-plan-price{font-size:clamp(26px,4vw,32px);font-weight:800;font-family:'Syne',sans-serif;color:var(--text);margin:12px 0;}
 .billing-plan-price span{font-size:14px;color:var(--text2);font-weight:400;}
-.billing-plan-features{font-size:13px;color:var(--text2);line-height:2;}
+.billing-plan-features{font-size:13px;color:var(--text2);line-height:2;flex:1;}
+.billing-plan-cta{margin-top:20px;}
 .billing-popular-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--accent);color:#000;font-size:11px;font-weight:700;padding:4px 14px;border-radius:20px;font-family:'DM Mono',monospace;white-space:nowrap;}
 
 /* SCRAPER */
@@ -719,20 +721,20 @@ tr:hover td{background:var(--surface2);}
           <div class="billing-plan-name">Free</div>
           <div class="billing-plan-price" id="price-free">₦0<span>/mo</span></div>
           <div class="billing-plan-features">✓ 100 emails/day<br>✓ 4 email credits/month (scrape+verify)<br>✓ 1 SMTP account<br>✓ 5 campaigns<br>✓ 500 contacts<br>✗ AI personalization</div>
-          <button class="btn btn-primary" id="freeBtn" style="margin-top:20px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);cursor:default">Current Plan</button>
+          <button class="btn btn-primary billing-plan-cta" id="freeBtn" style="background:var(--surface2);color:var(--text);border:1px solid var(--border2);cursor:default">Current Plan</button>
         </div>
         <div class="card" style="border-color:var(--accent);position:relative">
           <div class="billing-popular-badge">POPULAR</div>
           <div class="billing-plan-name" style="color:var(--accent)">Personal</div>
           <div class="billing-plan-price" id="price-personal">₦6,500<span>/mo</span></div>
           <div class="billing-plan-features">✓ 1,200 emails/day<br>✓ 100 email credits/month (scrape+verify)<br>✓ 3 SMTP accounts<br>✓ 25 campaigns<br>✓ 20,000 contacts<br>✓ AI personalization</div>
-          <button class="btn btn-primary" style="margin-top:20px" id="personalBtn" onclick="handlePlanClick('personal')">Upgrade to Personal</button>
+          <button class="btn btn-primary billing-plan-cta" id="personalBtn" onclick="handlePlanClick('personal')">Upgrade to Personal</button>
         </div>
         <div class="card" style="border-color:var(--info)">
           <div class="billing-plan-name" style="color:var(--info)">Corporate</div>
           <div class="billing-plan-price" id="price-corporate">₦24,000<span>/mo</span></div>
           <div class="billing-plan-features">✓ 4,500 emails/day<br>✓ 500 email credits/month (scrape+verify)<br>✓ 10 SMTP accounts<br>✓ 50 campaigns<br>✓ 70,000 contacts<br>✓ AI personalization<br>✓ Priority support</div>
-          <button class="btn btn-primary" style="margin-top:20px;background:var(--info)" id="corporateBtn" onclick="handlePlanClick('corporate')">Upgrade to Corporate</button>
+          <button class="btn btn-primary billing-plan-cta" style="background:var(--info)" id="corporateBtn" onclick="handlePlanClick('corporate')">Upgrade to Corporate</button>
           <!-- Hidden cancel subscription link -->
           <div style="text-align:center;margin-top:12px"><a id="cancelSubLink" style="font-size:11px;color:var(--text3);cursor:pointer;display:none" onclick="cancelSubscription()">Cancel subscription</a></div>
         </div>
@@ -1717,7 +1719,7 @@ async function loadCampaigns(){
       const tbody=document.getElementById(tbodyId);
       if(!tbody) return;
       const isDashboard=tbodyId==='campaignTable';
-      const rows=isDashboard?camps.slice(0,5):camps;
+      const rows=isDashboard?camps.slice(0,3):camps;
       if(!camps.length){
         const cols=isDashboard?7:8;
         tbody.innerHTML=`<tr><td colspan="${cols}" style="text-align:center;padding:40px;color:var(--text3)">No campaigns yet. <a onclick="openCampaignModal()" style="color:var(--accent);cursor:pointer">Create your first →</a></td></tr>`;
@@ -2288,15 +2290,19 @@ async function loadReplies(){
     }
     // Store replies globally for safe click access
     window._replies = replies;
-    list.innerHTML=replies.map((r,idx)=>`
+    list.innerHTML=replies.map((r,idx)=>{
+      const {newContent}=splitReplyContent(r.body||'');
+      const previewText=newContent||r.body||'';
+      return `
       <div class="inbox-item" onclick="showReplyByIdx(this,${idx})">
         <div class="inbox-item-header">
           <span class="inbox-item-from">${!r.is_read?'<span class=\'unread-dot\'></span>':''} ${(r.from_name||r.from_email||'').substring(0,30)}</span>
           <span class="inbox-item-time">${new Date(r.received_at).toLocaleDateString()}</span>
         </div>
         <div class="inbox-item-subject">${(r.subject||'No subject').substring(0,50)}</div>
-        <div class="inbox-item-preview">${(r.body||'').substring(0,80)}</div>
-      </div>`).join('');
+        <div class="inbox-item-preview">${previewText.substring(0,80)}</div>
+      </div>`;
+    }).join('');
     return true;
   } catch(e){ console.error('Replies error',e); return false; }
 }
@@ -2355,10 +2361,15 @@ async function loadGmailAccounts(){
             onclick="testGmailAccount('${a.id}','${a.gmail_address}')">
             📧 Test
           </button>
+          ${a.is_active ? `
           <button class="btn-sm btn-danger" style="font-size:11px;padding:5px 10px"
             onclick="disconnectGmail('${a.id}','${a.gmail_address}')">
             🗑 Remove
-          </button>
+          </button>` : `
+          <button class="btn-sm btn-danger" style="font-size:11px;padding:5px 10px"
+            onclick="hideGmailAccount('${a.id}','${a.gmail_address}')">
+            🗑 Delete
+          </button>`}
         </div>
       </div>`).join('');
 
@@ -2391,6 +2402,16 @@ async function disconnectGmail(accountId, email){
     const res = await apiFetch(`${API}/gmail/accounts/${accountId}`, {method: 'DELETE'});
     if(!res) return;
     if(res.ok){ loadGmailAccounts(); alert('✅ Gmail account disconnected'); }
+  } catch(e){ alert('Error: ' + e.message); }
+}
+
+async function hideGmailAccount(accountId, email){
+  if(!confirm(`Remove ${email} from this list?\n\nThis only hides it from view - your 10-hour wait before reconnecting any account still applies exactly the same as before.`)) return;
+  try{
+    const res = await apiFetch(`${API}/gmail/accounts/${accountId}/hide`, {method: 'PATCH'});
+    if(!res) return;
+    if(res.ok){ loadGmailAccounts(); }
+    else { const d=await res.json().catch(()=>({})); alert('Error: '+(d.detail||'Could not remove')); }
   } catch(e){ alert('Error: ' + e.message); }
 }
 
@@ -3181,6 +3202,29 @@ async function deleteSentEmail(id){
   } catch(e){ alert('Connection error'); }
 }
 
+// Email replies carry the ENTIRE previous conversation quoted below the new text
+// (Gmail does this automatically - "On [date], [name] wrote: > ..."). Split that out
+// so we can show "what they just said" prominently and the quoted history separately,
+// instead of one confusing undifferentiated block.
+function splitReplyContent(text){
+  if(!text) return {newContent:'', quotedContent:''};
+  // Common quote-start patterns across Gmail, Outlook, Apple Mail, etc.
+  const patterns=[
+    /\n\s*On .{5,80}wrote:\s*\n/i,
+    /\n\s*On .{5,80}\n.{0,80}wrote:\s*\n/i,
+    /\n\s*-{2,}\s*Original Message\s*-{2,}/i,
+    /\n\s*From:\s*.+\nSent:\s*.+\nTo:\s*.+/i,
+    /\n>+ /,
+  ];
+  let splitIdx=-1;
+  for(const p of patterns){
+    const m=text.match(p);
+    if(m && (splitIdx===-1 || m.index<splitIdx)) splitIdx=m.index;
+  }
+  if(splitIdx===-1) return {newContent:text.trim(), quotedContent:''};
+  return {newContent:text.slice(0,splitIdx).trim(), quotedContent:text.slice(splitIdx).trim()};
+}
+
 async function showReplyByIdx(el, idx){
   const r = window._replies && window._replies[idx];
   if(!r) return;
@@ -3194,7 +3238,8 @@ async function showReplyByIdx(el, idx){
 
   // Full reply body comes from our own reply-tracking domain (mailflows.org),
   // captured independently of Gmail's API - so this is the real message, not a snippet.
-  const snippet = r.body || '';
+  const {newContent, quotedContent} = splitReplyContent(r.body || '');
+  const quotedId = 'quoted-'+r.id;
 
   document.getElementById('replyDetail').innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
@@ -3204,14 +3249,26 @@ async function showReplyByIdx(el, idx){
         <button class="btn-sm btn-ghost" style="padding:4px 10px" onclick="closeReplyDetail()" title="Close">✕</button>
       </div>
     </div>
-    <div class="inbox-detail-meta">From: <strong>${fromDisplay}</strong> &lt;${emailDisplay}&gt;<br>Received: ${new Date(r.received_at).toLocaleString()}</div>
-    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin:16px 0">
-      <div style="font-size:11px;color:var(--text3);margin-bottom:6px">💬 Message</div>
-      <div style="font-size:14px">${esc(snippet) || '<span style="color:var(--text3);font-style:italic">Message content was not captured - open in Gmail to see it.</span>'}</div>
+    <div class="inbox-detail-meta">
+      <span style="display:inline-flex;align-items:center;gap:5px;background:var(--accent-dim);color:var(--accent);border-radius:12px;padding:2px 10px;font-size:11px;font-weight:600;margin-bottom:6px">↩ Reply from ${fromDisplay}</span><br>
+      &lt;${emailDisplay}&gt; · Received: ${new Date(r.received_at).toLocaleString()}
     </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius);padding:14px;margin:16px 0">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:6px">💬 What ${fromDisplay} said</div>
+      <div style="font-size:14px">${esc(newContent) || esc(quotedContent) || '<span style="color:var(--text3);font-style:italic">Message content was not captured - open in Gmail to see it.</span>'}</div>
+    </div>
+    ${quotedContent && newContent ? `
+    <button class="btn-sm btn-ghost" style="width:100%;margin-bottom:8px;font-size:11px" onclick="
+      const q=document.getElementById('${quotedId}');
+      const isHidden=q.style.display==='none';
+      q.style.display=isHidden?'block':'none';
+      this.textContent=isHidden?'▲ Hide quoted history':'▼ Show quoted history (earlier messages in this thread)';
+    ">▼ Show quoted history (earlier messages in this thread)</button>
+    <div id="${quotedId}" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:16px;font-size:12px;color:var(--text3)">${esc(quotedContent)}</div>
+    ` : ''}
     <div style="font-size:11px;color:var(--text3);margin-bottom:16px;font-style:italic">Kept for 90 days, then auto-deleted.</div>
     <div class="reply-box">
-      <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Sending here keeps this conversation trackable - if they reply again, you'll see it too. Opening in Gmail instead sends it outside MailFlows, so any further reply from them won't be captured.</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px">✍️ Your reply, sent from you to ${fromDisplay} - sending here keeps this conversation trackable, if they reply again you'll see it too. Opening in Gmail instead sends it outside MailFlows, so any further reply from them won't be captured.</div>
       <textarea id="sendReplyText" rows="6" style="width:100%;margin-bottom:8px" placeholder="Type your reply..."></textarea>
       <button class="btn-sm btn-ghost" style="width:100%;margin-bottom:8px" id="suggestReplyBtn" onclick="loadSuggestedReply('${r.id}','${(r.from_email||'').replace(/'/g,"\\'")}','${(r.subject||'').replace(/'/g,"\\'")}')">💡 Suggest a draft</button>
       <div id="suggestedReplyNote" style="font-size:11px;color:var(--text3);margin-bottom:8px;font-style:italic"></div>
