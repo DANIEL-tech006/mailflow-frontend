@@ -3088,7 +3088,7 @@ function updateBillingButtons(){
     freeBtn.onclick=null;
   } else if(plan==='personal'){
     freeBtn.textContent='Downgrade to Free';
-    freeBtn.onclick=()=>{ if(confirm('Downgrade to Free plan now? You will lose access to Personal features immediately.')) downgradeToFree(); };
+    freeBtn.onclick=()=>{ if(confirm('Downgrade to Free plan? Your Personal features stay active until your current billing period ends - you won\'t lose time you already paid for.')) downgradeToFree(); };
     personalBtn.textContent='Current Plan ✓';
     personalBtn.style.background='var(--surface2)';
     personalBtn.style.color='var(--text)';
@@ -3097,7 +3097,7 @@ function updateBillingButtons(){
     if(cancelLink){ cancelLink.style.display='block'; cancelLink.textContent='Cancel Personal subscription'; }
   } else if(plan==='corporate'){
     freeBtn.textContent='Downgrade to Free';
-    freeBtn.onclick=()=>{ if(confirm('Downgrade to Free plan now? You will lose access to Corporate features immediately.')) downgradeToFree(); };
+    freeBtn.onclick=()=>{ if(confirm('Downgrade to Free plan? Your Corporate features stay active until your current billing period ends - you won\'t lose time you already paid for.')) downgradeToFree(); };
     personalBtn.textContent='Downgrade to Personal';
     personalBtn.onclick=()=>handlePlanClick('personal');
     corporateBtn.textContent='Current Plan ✓';
@@ -3123,14 +3123,11 @@ function handlePlanClick(plan){
     // Upgrading
     startPayment(plan);
   } else if(plan==='free'){
-    // Downgrading straight to Free - fully automatic, no support needed
-    if(confirm('Downgrade to Free plan now? You will lose access to paid features immediately.')) downgradeToFree();
+    if(confirm('Downgrade to Free plan? If you\'re still within a paid billing period, your current features stay active until it ends - you won\'t lose time you already paid for.')) downgradeToFree();
   } else {
-    // Downgrading between two paid plans (e.g. Corporate -> Personal) involves
-    // proration on the existing subscription, which isn't automated yet.
-    if(confirm(`Downgrade to ${plan} plan? Your current features will continue until end of billing period.`)){
-      alert("Downgrading between paid plans isn't automated yet - use Contact Support and we'll process it within 24 hours.");
-    }
+    // Downgrading between two paid plans (e.g. Corporate -> Personal) - fully
+    // automated now, same fair "keeps current features until billing period ends" rule.
+    if(confirm(`Downgrade to ${plan} plan? If you're still within your current paid billing period, your current features stay active until it ends.`)) scheduleDowngrade(plan);
   }
 }
 
@@ -3140,13 +3137,39 @@ async function downgradeToFree(){
     const data=await res.json();
     if(res.ok){
       alert('✅ '+data.message);
-      const user=JSON.parse(localStorage.getItem('mf_user')||'{}');
-      user.plan='free';
-      localStorage.setItem('mf_user', JSON.stringify(user));
+      if(!data.scheduled_for){
+        // Only an IMMEDIATE change updates local state - a scheduled one keeps
+        // the current plan active until the billing period actually ends.
+        const user=JSON.parse(localStorage.getItem('mf_user')||'{}');
+        user.plan='free';
+        localStorage.setItem('mf_user', JSON.stringify(user));
+      }
       updateBillingInfo();
       loadStats();
     } else {
       alert('Error: '+(data.detail||'Could not downgrade'));
+    }
+  } catch(e){ alert('Connection error - please try again.'); }
+}
+
+async function scheduleDowngrade(targetPlan){
+  try{
+    const res=await fetch(`${API}/payments/schedule-downgrade`,{
+      method:'POST', headers: await authHeadersAsync(),
+      body: JSON.stringify({target_plan: targetPlan})
+    });
+    const data=await res.json();
+    if(res.ok){
+      alert('✅ '+data.message);
+      if(!data.scheduled_for){
+        const user=JSON.parse(localStorage.getItem('mf_user')||'{}');
+        user.plan=targetPlan;
+        localStorage.setItem('mf_user', JSON.stringify(user));
+      }
+      updateBillingInfo();
+      loadStats();
+    } else {
+      alert('Error: '+(data.detail||'Could not schedule downgrade'));
     }
   } catch(e){ alert('Connection error - please try again.'); }
 }
