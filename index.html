@@ -3096,6 +3096,8 @@ function updateBillingButtons(){
     personalBtn.onclick=null;
     if(cancelLink){ cancelLink.style.display='block'; cancelLink.textContent='Cancel Personal subscription'; }
   } else if(plan==='corporate'){
+    freeBtn.textContent='Downgrade to Free';
+    freeBtn.onclick=()=>{ if(confirm('Downgrade to Free plan now? You will lose access to Corporate features immediately.')) downgradeToFree(); };
     personalBtn.textContent='Downgrade to Personal';
     personalBtn.onclick=()=>handlePlanClick('personal');
     corporateBtn.textContent='Current Plan ✓';
