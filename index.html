@@ -1731,7 +1731,7 @@ async function loadCampaigns(){
             ${c.name}
           </td>
           ${tbodyId==='campaignsFullTable'?`<td style="max-width:160px;white-space:normal">${c.subject||'—'}</td>`:''}
-          <td><span class="badge badge-${c.status==='completed'?'success':c.status==='sending'?'info':c.status==='failed'?'danger':'warning'}">● ${c.status||'draft'}</span></td>
+          <td><span class="badge badge-${c.status==='completed'?'success':(c.status==='sending'||c.status==='queued')?'info':c.status==='failed'?'danger':'warning'}">● ${c.status||'draft'}</span></td>
           <td>${c.sent_count||0}</td>
           <td>${c.open_count||0}</td>
           <td>${c.reply_count||0}</td>
@@ -1814,7 +1814,7 @@ async function sendCampaign(){
     const camp=await createRes.json();
     if(!createRes.ok){alert('Failed to create campaign: '+(camp.detail||'Unknown error'));btn.innerHTML='🚀 Send Campaign';btn.disabled=false;return;}
     // Send campaign via Gmail API
-    btn.innerHTML='<span class="spinner-white"></span> Sending...';
+    btn.innerHTML='<span class="spinner-white"></span> Queueing...';
     const sendRes=await apiFetch(`${API}/gmail/campaigns/${camp.id}/send`,{method:'POST'});
     if(!sendRes){ btn.innerHTML='🚀 Send Campaign'; btn.disabled=false; return; }
     const sendData=await sendRes.json();
@@ -1838,7 +1838,7 @@ async function sendCampaign(){
 function openCampaignDetail(id, name, subject, status, body){
   document.getElementById('cdModalTitle').textContent = name;
   document.getElementById('cdSubject').textContent = subject || 'No subject';
-  document.getElementById('cdStatus').innerHTML = `<span class="badge badge-${status==='completed'?'success':status==='sending'?'info':status==='failed'?'danger':'warning'}">● ${status||'draft'}</span>`;
+  document.getElementById('cdStatus').innerHTML = `<span class="badge badge-${status==='completed'?'success':(status==='sending'||status==='queued')?'info':status==='failed'?'danger':'warning'}">● ${status||'draft'}</span>`;
   document.getElementById('cdBody').textContent = body || 'No content';
   document.getElementById('cdDeleteBtn').onclick = () => deleteCampaign(id, name);
   if(status === 'draft'){
