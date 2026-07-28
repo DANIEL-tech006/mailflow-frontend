@@ -316,7 +316,7 @@ tr:hover td{background:var(--surface2);}
       <button class="btn btn-primary" id="loginBtn" onclick="handleLogin()">Sign In</button>
       <div class="auth-switch">Don't have an account? <a onclick="showRegister()">Create one free</a></div>
       <div class="auth-switch" style="margin-top:12px"><a onclick="showForgotPassword()">Forgot password?</a></div>
-      <div class="auth-switch" style="margin-top:16px;font-size:12px"><a href="/privacy.html" target="_blank" style="color:var(--text3)">Privacy Policy</a></div>
+      <div class="auth-switch" style="margin-top:16px;font-size:12px"><a href="/privacy.html" target="_blank" style="color:var(--text3)">Privacy Policy</a> · <a href="/terms.html" target="_blank" style="color:var(--text3)">Terms of Service</a></div>
     </div>
   </div>
   <!-- FORGOT PASSWORD PANEL -->
@@ -384,7 +384,11 @@ tr:hover td{background:var(--surface2);}
         <span style="color:var(--text3);font-size:12px;flex-shrink:0">✏️</span>
       </div>
       <a href="javascript:void(0)" onclick="openSupportModal()" style="display:block;width:100%;margin-top:8px;text-align:center;font-size:12px;color:var(--text3);text-decoration:none">✉️ Contact Support</a>
-      <a href="/privacy.html" target="_blank" style="display:block;width:100%;margin-top:6px;text-align:center;font-size:11px;color:var(--text3);text-decoration:none">Privacy Policy</a>
+      <div style="display:flex;justify-content:center;gap:6px;margin-top:6px;font-size:11px;color:var(--text3)">
+        <a href="/privacy.html" target="_blank" style="color:var(--text3);text-decoration:none">Privacy Policy</a>
+        <span>·</span>
+        <a href="/terms.html" target="_blank" style="color:var(--text3);text-decoration:none">Terms</a>
+      </div>
       <button class="btn-sm btn-ghost" style="width:100%;margin-top:8px;text-align:center" onclick="handleLogout()">🚪 Logout</button>
     </div>
   </aside>
