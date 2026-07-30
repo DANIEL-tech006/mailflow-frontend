@@ -957,7 +957,7 @@ Daniel, daniel@example.com, MailFlows Inc"></textarea>
 // ══════════════════════════════
 // CONFIG
 // ══════════════════════════════
-const API = 'https://mailflow-backend-68gn.onrender.com'; // TEMP: pointed at Render for Google OAuth demo video. Switch back to Railway URL once Railway is paid again: https://web-production-dd320.up.railway.app
+const API = 'https://api.mailflows.org'; // Custom subdomain - stays the same even when you switch hosts later, just repoint the CNAME instead of editing this file again
 const SUPA_URL = 'https://oeqmkuomsvjijrfbktcj.supabase.co';
 const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lcW1rdW9tc3ZqaWpyZmJrdGNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5ODQ4MjAsImV4cCI6MjA5NjU2MDgyMH0.pSL5qupfG1PseCdAj1NqWK68XrfhWGTHJkgjLNFZlTk';
 let currentUser = null;
@@ -2830,6 +2830,8 @@ window.addEventListener('load',async ()=>{
     if(saved){ currentUser=JSON.parse(saved); loadDashboard(); }
     if(gmailError==='cooldown'){
       setTimeout(()=>alert('⏳ ' + (gmailErrorDetail || 'You disconnected a Gmail account recently. Please wait before connecting again.')), 500);
+    } else if(gmailError==='already_connected_elsewhere'){
+      setTimeout(()=>alert('⚠️ ' + (gmailErrorDetail || 'This Gmail account is already connected to a different MailFlows account.')), 500);
     } else {
       setTimeout(()=>alert('❌ Gmail connection failed: ' + gmailError + '\nPlease try again.'), 500);
     }
