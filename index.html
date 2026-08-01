@@ -295,7 +295,7 @@ tr:hover td{background:var(--surface2);}
 <div id="authWrap" class="auth-wrap">
   <div class="auth-left">
     <div style="width:100%;max-width:380px">
-      <div class="auth-brand">Mail<span>Flow</span></div>
+      <div class="auth-brand">Mail<span>Flows</span></div>
       <div class="auth-tagline">// cold email infrastructure</div>
       <div class="auth-features">
         <div class="auth-feature"><div class="auth-feature-icon">🎯</div><div class="auth-feature-text"><h4>Niche Email Scraper</h4><p>Find verified business emails by industry and location.</p></div></div>
@@ -305,8 +305,23 @@ tr:hover td{background:var(--surface2);}
       </div>
     </div>
   </div>
-  <div class="auth-right" id="loginPanel">
+  <div class="auth-right" id="landingPanel">
+    <div class="auth-card fade-in" style="max-width:440px">
+      <h2>Send cold email campaigns through your own Gmail account</h2>
+      <p style="margin-bottom:20px">MailFlows is a cold email platform built for freelancers, marketers, and small agencies. Connect your own Gmail account, find and verify business contact emails, and run outreach campaigns — all from one dashboard, with no separate email server to set up.</p>
+      <div style="margin-bottom:24px">
+        <div style="margin-bottom:10px"><strong>Find contacts.</strong> Search for verified business emails by industry and location, or add your own contact list.</div>
+        <div style="margin-bottom:10px"><strong>Send through your own Gmail.</strong> MailFlows never uses a shared sending server — every email goes out through the Gmail account you personally connect and authorize.</div>
+        <div style="margin-bottom:10px"><strong>Track replies.</strong> See opens and replies to your campaigns in one unified inbox, without leaving MailFlows.</div>
+      </div>
+      <button class="btn btn-primary" onclick="showLogin()">Sign In</button>
+      <button class="btn btn-ghost" style="margin-top:10px" onclick="showRegister()">Create a Free Account</button>
+      <div class="auth-switch" style="margin-top:16px;font-size:12px"><a href="/privacy.html" target="_blank" style="color:var(--text3)">Privacy Policy</a> · <a href="/terms.html" target="_blank" style="color:var(--text3)">Terms of Service</a></div>
+    </div>
+  </div>
+  <div class="auth-right" id="loginPanel" style="display:none">
     <div class="auth-card fade-in">
+      <div class="auth-switch" style="margin-bottom:12px"><a onclick="showLanding()">← Back</a></div>
       <h2>Welcome back</h2>
       <p>Sign in to your MailFlows account</p>
       <div class="alert alert-error" id="loginError"></div>
@@ -318,6 +333,7 @@ tr:hover td{background:var(--surface2);}
       <div class="auth-switch" style="margin-top:12px"><a onclick="showForgotPassword()">Forgot password?</a></div>
       <div class="auth-switch" style="margin-top:16px;font-size:12px"><a href="/privacy.html" target="_blank" style="color:var(--text3)">Privacy Policy</a> · <a href="/terms.html" target="_blank" style="color:var(--text3)">Terms of Service</a></div>
     </div>
+  </div>
   </div>
   <!-- FORGOT PASSWORD PANEL -->
   <div class="auth-right" id="forgotPanel" style="display:none">
@@ -1028,6 +1044,7 @@ function forceReLogin(){
   setFaqChatVisible(false);
   if(authWrap){
     authWrap.style.display='grid';
+    showLogin();
     const el=document.getElementById('loginSuccess');
     if(el) showAlert(el, 'Session expired. Please sign in again.');
   }
@@ -1116,8 +1133,9 @@ async function apiFetch(url, options={}){
   }
 }
 
-function showRegister(){ document.getElementById('loginPanel').style.display='none'; document.getElementById('registerPanel').style.display='flex'; }
-function showLogin(){ document.getElementById('registerPanel').style.display='none'; document.getElementById('loginPanel').style.display='flex'; }
+function showLanding(){ document.getElementById('loginPanel').style.display='none'; document.getElementById('registerPanel').style.display='none'; const fp=document.getElementById('forgotPanel'); if(fp) fp.style.display='none'; document.getElementById('landingPanel').style.display='flex'; }
+function showRegister(){ document.getElementById('landingPanel').style.display='none'; document.getElementById('loginPanel').style.display='none'; document.getElementById('registerPanel').style.display='flex'; }
+function showLogin(){ document.getElementById('landingPanel').style.display='none'; document.getElementById('registerPanel').style.display='none'; document.getElementById('loginPanel').style.display='flex'; }
 function showAlert(el,msg){ el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),6000); }
 
 async function resendConfirmation(email){
@@ -2881,6 +2899,7 @@ window.addEventListener('load',async ()=>{
     document.getElementById('authWrap').style.display='grid';
     document.getElementById('appWrap').style.display='none';
     setFaqChatVisible(false);
+    showLogin();
     showAlert(document.getElementById('loginSuccess'),'✅ Email verified! You can now sign in.');
     window.location.hash=''; return;
   }
@@ -3037,6 +3056,7 @@ async function sendPasswordReset(){
 // FORGOT PASSWORD (AUTH PAGE)
 // ══════════════════════════════
 function showForgotPassword(){
+  document.getElementById('landingPanel').style.display='none';
   document.getElementById('loginPanel').style.display='none';
   document.getElementById('registerPanel').style.display='none';
   document.getElementById('forgotPanel').style.display='flex';
