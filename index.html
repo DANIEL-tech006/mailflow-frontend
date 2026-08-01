@@ -2410,12 +2410,12 @@ async function disconnectGmail(accountId, email){
 }
 
 async function hideGmailAccount(accountId, email){
-  if(!confirm(`Remove ${email} from this list?\n\nThis only hides it from view - your 10-hour wait before reconnecting any account still applies exactly the same as before.`)) return;
+  if(!confirm(`Permanently delete ${email}?\n\nYou'll need to reconnect it from scratch to use it again. Your 10-hour wait before reconnecting any account still applies exactly the same as before.`)) return;
   try{
     const res = await apiFetch(`${API}/gmail/accounts/${accountId}/hide`, {method: 'PATCH'});
     if(!res) return;
     if(res.ok){ loadGmailAccounts(); }
-    else { const d=await res.json().catch(()=>({})); alert('Error: '+(d.detail||'Could not remove')); }
+    else { const d=await res.json().catch(()=>({})); alert('Error: '+(d.detail||'Could not delete')); }
   } catch(e){ alert('Error: ' + e.message); }
 }
 
