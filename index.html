@@ -41,7 +41,7 @@ body.sidebar-open{overflow:hidden;position:fixed;width:100%;}
 
 /* AUTH */
 .auth-wrap{min-height:100vh;min-height:100dvh;display:grid;grid-template-columns:1fr 1fr;}
-.auth-left{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:center;align-items:center;padding:clamp(32px,5vw,60px);position:relative;overflow:hidden;}
+.auth-left{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:center;align-items:center;padding:clamp(32px,5vw,60px);position:relative;overflow-x:hidden;overflow-y:auto;height:100vh;height:100dvh;}
 .auth-left::before{content:'';position:absolute;top:-200px;left:-200px;width:500px;height:500px;background:radial-gradient(circle,rgba(0,212,170,.08) 0%,transparent 70%);pointer-events:none;}
 .auth-left::after{content:'';position:absolute;bottom:-160px;right:-160px;width:380px;height:380px;background:radial-gradient(circle,rgba(0,212,170,.06) 0%,transparent 70%);pointer-events:none;}
 .auth-brand{font-family:'Syne',sans-serif;font-size:clamp(24px,3vw,32px);font-weight:800;color:var(--accent);letter-spacing:-1px;margin-bottom:8px;}
@@ -52,7 +52,7 @@ body.sidebar-open{overflow:hidden;position:fixed;width:100%;}
 .auth-feature-icon{width:40px;height:40px;border-radius:10px;background:var(--accent-dim);border:1px solid rgba(0,212,170,.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
 .auth-feature-text h4{font-family:'Syne',sans-serif;font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px;}
 .auth-feature-text p{font-size:13px;color:var(--text2);line-height:1.5;}
-.auth-right{display:flex;align-items:center;justify-content:center;padding:clamp(24px,4vw,60px) clamp(20px,4vw,40px);}
+.auth-right{display:flex;align-items:center;justify-content:center;padding:clamp(24px,4vw,60px) clamp(20px,4vw,40px);overflow-y:auto;height:100vh;height:100dvh;}
 .auth-card{width:100%;max-width:420px;}
 .hero-kicker{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1.5px;color:var(--accent);margin-bottom:16px;text-transform:uppercase;}
 .hero-headline{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(28px,3.6vw,42px);line-height:1.08;letter-spacing:-1px;color:var(--text);margin-bottom:16px;}
