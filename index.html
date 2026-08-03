@@ -314,7 +314,7 @@ tr:hover td{background:var(--surface2);}
       <div class="auth-brand">Mail<span>Flows</span></div>
       <div class="hero-kicker">Cold email, done right</div>
       <h1 class="hero-headline">Your next client is one email away.</h1>
-      <p class="hero-sub">Find the right person to email, send it from your own real Gmail so it never looks mass-sent, and know the second they reply.</p>
+      <p class="hero-sub">MailFlows helps freelancers, marketers, and small agencies find real business contacts and reach them by email — without hiring a sales team or renting a mailing server.</p>
       <div class="send-trail" aria-hidden="true">
         <svg viewBox="0 0 360 100" width="100%" height="90" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="24" cy="50" r="16" fill="var(--accent-dim)" stroke="var(--accent)" stroke-width="1.5"/>
@@ -325,9 +325,10 @@ tr:hover td{background:var(--surface2);}
         </svg>
       </div>
       <div class="hero-points">
-        <div class="hero-point"><span class="hero-point-dot"></span>Real business emails — even for companies with no website</div>
-        <div class="hero-point"><span class="hero-point-dot"></span>Sent through your own Gmail, not a mass mailer</div>
-        <div class="hero-point"><span class="hero-point-dot"></span>Opens and replies, tracked in one inbox</div>
+        <div class="hero-point"><span class="hero-point-dot"></span>Search by industry and location to find real people to contact — even for businesses with no website</div>
+        <div class="hero-point"><span class="hero-point-dot"></span>Verify every email before you send, so your outreach doesn't bounce</div>
+        <div class="hero-point"><span class="hero-point-dot"></span>Sent through your own Gmail, not a mass mailer — every email looks personal, because it is</div>
+        <div class="hero-point"><span class="hero-point-dot"></span>Opens and replies, tracked in one inbox, so you know exactly who's interested</div>
       </div>
     </div>
   </div>
@@ -335,7 +336,7 @@ tr:hover td{background:var(--surface2);}
     <div class="auth-card fade-in" style="max-width:400px">
       <div class="hero-kicker">Start free — no card needed</div>
       <h2 style="margin-bottom:10px">Find them. Email them. Know when they reply.</h2>
-      <p style="margin-bottom:24px;color:var(--text2)">Everything you need to run real outreach — contacts, sending, and replies — in one place.</p>
+      <p style="margin-bottom:24px;color:var(--text2)">Search for verified contacts, send campaigns straight from your own Gmail account, and track opens and replies — all in one dashboard built for outreach, not generic mass email.</p>
       <button class="btn btn-primary" onclick="showLogin()">Sign In</button>
       <button class="btn btn-ghost" style="margin-top:10px" onclick="showRegister()">Create a Free Account</button>
       <div class="auth-switch" style="margin-top:16px;font-size:12px"><a href="/privacy.html" target="_blank" style="color:var(--text3)">Privacy Policy</a> · <a href="/terms.html" target="_blank" style="color:var(--text3)">Terms of Service</a></div>
@@ -1155,9 +1156,9 @@ async function apiFetch(url, options={}){
   }
 }
 
-function showLanding(){ document.getElementById('loginPanel').style.display='none'; document.getElementById('registerPanel').style.display='none'; const fp=document.getElementById('forgotPanel'); if(fp) fp.style.display='none'; document.getElementById('landingPanel').style.display='flex'; document.getElementById('authWrap').classList.add('show-hero'); }
-function showRegister(){ document.getElementById('landingPanel').style.display='none'; document.getElementById('loginPanel').style.display='none'; document.getElementById('registerPanel').style.display='flex'; document.getElementById('authWrap').classList.remove('show-hero'); }
-function showLogin(){ document.getElementById('landingPanel').style.display='none'; document.getElementById('registerPanel').style.display='none'; document.getElementById('loginPanel').style.display='flex'; document.getElementById('authWrap').classList.remove('show-hero'); }
+function showLanding(){ document.getElementById('loginPanel').style.display='none'; document.getElementById('registerPanel').style.display='none'; const fp=document.getElementById('forgotPanel'); if(fp) fp.style.display='none'; document.getElementById('landingPanel').style.display='flex'; document.getElementById('authWrap').classList.add('show-hero'); window.scrollTo(0,0); }
+function showRegister(){ document.getElementById('landingPanel').style.display='none'; document.getElementById('loginPanel').style.display='none'; document.getElementById('registerPanel').style.display='flex'; document.getElementById('authWrap').classList.remove('show-hero'); window.scrollTo(0,0); }
+function showLogin(){ document.getElementById('landingPanel').style.display='none'; document.getElementById('registerPanel').style.display='none'; document.getElementById('loginPanel').style.display='flex'; document.getElementById('authWrap').classList.remove('show-hero'); window.scrollTo(0,0); }
 function showAlert(el,msg){ el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),6000); }
 
 async function resendConfirmation(email){
@@ -3087,6 +3088,7 @@ function showForgotPassword(){
   document.getElementById('registerPanel').style.display='none';
   document.getElementById('forgotPanel').style.display='flex';
   document.getElementById('authWrap').classList.remove('show-hero');
+  window.scrollTo(0,0);
 }
 
 async function handleForgotPassword(){
