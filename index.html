@@ -1943,6 +1943,10 @@ async function runScraper(){
   document.getElementById('scraperLoading').style.display='none';
 }
 
+function sourceLabel(source){
+  const labels = {web_scrape: 'Website', hunter_discover: 'Verified Lookup', tavily: 'Website'};
+  return labels[source] || source || 'Scraper';
+}
 function displayScraperResults(niche){
   document.getElementById('scraperResults').style.display='block';
   document.getElementById('resultCount').textContent=`(${scraperResults.length} found for "${niche}")`;
@@ -1957,7 +1961,7 @@ function displayScraperResults(niche){
       <td>${r.name||'—'}</td>
       <td><span style="font-family:'DM Mono',monospace;font-size:12px">${r.email}</span></td>
       <td>${r.company||'—'}</td>
-      <td><span class="badge badge-info">${r.source||'scraper'}</span></td>
+      <td><span class="badge badge-info">${sourceLabel(r.source)}</span></td>
       <td><button class="btn-sm btn-ghost" style="font-size:11px;padding:5px 10px" onclick="saveOneContact(${idx})">💾 Save</button></td>
     </tr>`).join('');
 }
