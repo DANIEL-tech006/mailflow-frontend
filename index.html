@@ -40,7 +40,7 @@ body.sidebar-open{overflow:hidden;position:fixed;width:100%;}
 *{scrollbar-width:thin;scrollbar-color:var(--border2) transparent;}
 
 /* AUTH */
-.auth-wrap{min-height:100vh;display:grid;grid-template-columns:1fr 1fr;}
+.auth-wrap{min-height:100vh;min-height:100dvh;display:grid;grid-template-columns:1fr 1fr;}
 .auth-left{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:center;align-items:center;padding:clamp(32px,5vw,60px);position:relative;overflow:hidden;}
 .auth-left::before{content:'';position:absolute;top:-200px;left:-200px;width:500px;height:500px;background:radial-gradient(circle,rgba(0,212,170,.08) 0%,transparent 70%);pointer-events:none;}
 .auth-left::after{content:'';position:absolute;bottom:-160px;right:-160px;width:380px;height:380px;background:radial-gradient(circle,rgba(0,212,170,.06) 0%,transparent 70%);pointer-events:none;}
@@ -272,6 +272,9 @@ tr:hover td{background:var(--surface2);}
   .hamburger{display:flex;}
   .auth-wrap{grid-template-columns:1fr;}
   .auth-left{display:none;}
+  .auth-wrap.show-hero .auth-left{display:flex;padding-bottom:8px;}
+  .auth-wrap.show-hero .auth-left::after{display:none;}
+  .send-trail{margin:20px 0 18px;}
   .inbox-wrap{grid-template-columns:1fr;grid-template-rows:auto 1fr;height:auto;min-height:auto;}
   .qs-grid{grid-template-columns:1fr;}
   .inbox-list{border-right:none;border-bottom:1px solid var(--border);max-height:280px;}
@@ -305,7 +308,7 @@ tr:hover td{background:var(--surface2);}
 <body>
 
 <!-- AUTH -->
-<div id="authWrap" class="auth-wrap">
+<div id="authWrap" class="auth-wrap show-hero">
   <div class="auth-left">
     <div style="width:100%;max-width:420px;position:relative;z-index:1">
       <div class="auth-brand">Mail<span>Flows</span></div>
@@ -1152,9 +1155,9 @@ async function apiFetch(url, options={}){
   }
 }
 
-function showLanding(){ document.getElementById('loginPanel').style.display='none'; document.getElementById('registerPanel').style.display='none'; const fp=document.getElementById('forgotPanel'); if(fp) fp.style.display='none'; document.getElementById('landingPanel').style.display='flex'; }
-function showRegister(){ document.getElementById('landingPanel').style.display='none'; document.getElementById('loginPanel').style.display='none'; document.getElementById('registerPanel').style.display='flex'; }
-function showLogin(){ document.getElementById('landingPanel').style.display='none'; document.getElementById('registerPanel').style.display='none'; document.getElementById('loginPanel').style.display='flex'; }
+function showLanding(){ document.getElementById('loginPanel').style.display='none'; document.getElementById('registerPanel').style.display='none'; const fp=document.getElementById('forgotPanel'); if(fp) fp.style.display='none'; document.getElementById('landingPanel').style.display='flex'; document.getElementById('authWrap').classList.add('show-hero'); }
+function showRegister(){ document.getElementById('landingPanel').style.display='none'; document.getElementById('loginPanel').style.display='none'; document.getElementById('registerPanel').style.display='flex'; document.getElementById('authWrap').classList.remove('show-hero'); }
+function showLogin(){ document.getElementById('landingPanel').style.display='none'; document.getElementById('registerPanel').style.display='none'; document.getElementById('loginPanel').style.display='flex'; document.getElementById('authWrap').classList.remove('show-hero'); }
 function showAlert(el,msg){ el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),6000); }
 
 async function resendConfirmation(email){
@@ -3083,6 +3086,7 @@ function showForgotPassword(){
   document.getElementById('loginPanel').style.display='none';
   document.getElementById('registerPanel').style.display='none';
   document.getElementById('forgotPanel').style.display='flex';
+  document.getElementById('authWrap').classList.remove('show-hero');
 }
 
 async function handleForgotPassword(){
