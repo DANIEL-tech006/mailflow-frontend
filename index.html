@@ -76,7 +76,15 @@ body.sidebar-open{overflow:hidden;position:fixed;width:100%;}
 .mkt-footer-links a{color:var(--text3);text-decoration:none;font-size:12.5px;}
 .mkt-footer-links a:hover{color:var(--text2);}
 .mkt-footer-copy{font-size:12px;color:var(--text3);}
-@media(max-width:700px){.mkt-nav-links{display:none;}}
+.mkt-hamburger{display:none;background:transparent;border:1px solid var(--border);color:var(--text);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;align-items:center;justify-content:center;}
+.mkt-mobile-menu{display:none;flex-direction:column;gap:2px;padding:10px clamp(20px,4vw,40px) 16px;border-top:1px solid var(--border);}
+.mkt-mobile-menu.open{display:flex;}
+.mkt-mobile-menu a{color:var(--text2);text-decoration:none;font-size:14px;padding:10px 0;border-bottom:1px solid var(--border);}
+.mkt-mobile-menu a:last-child{border-bottom:none;}
+@media(max-width:700px){
+  .mkt-nav-links{display:none;}
+  .mkt-hamburger{display:flex;}
+}
 
 .auth-wrap{min-height:100vh;min-height:100dvh;display:grid;grid-template-columns:1fr 1fr;}
 .auth-left{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:flex-start;align-items:center;padding:clamp(32px,5vw,60px);position:relative;overflow-x:hidden;overflow-y:auto;height:100vh;height:100dvh;}
@@ -346,19 +354,25 @@ tr:hover td{background:var(--surface2);}
 <body>
 
 <!-- AUTH -->
-<div id="marketingPage">
-  <nav class="mkt-nav">
+<div id="marketingPage" style="display:none">
+  <nav class="mkt-nav" id="top">
     <div class="mkt-nav-inner">
-      <div class="mkt-logo" style="cursor:pointer" onclick="window.scrollTo({top:0,behavior:'smooth'})">Mail<span>Flows</span></div>
+      <a href="#top" class="mkt-logo" onclick="window.scrollTo({top:0,behavior:'smooth'})">Mail<span>Flows</span></a>
       <div class="mkt-nav-links">
         <a href="#mkt-features">Features</a>
         <a href="#mkt-how">How it works</a>
         <a href="/privacy.html">Privacy</a>
       </div>
       <div class="mkt-nav-actions">
+        <button class="mkt-hamburger" onclick="toggleMktMenu()" aria-label="Menu">☰</button>
         <button class="btn btn-ghost btn-sm" onclick="goToSignIn()">Sign In</button>
         <button class="btn btn-primary btn-sm" onclick="goToSignup()">Start Free</button>
       </div>
+    </div>
+    <div class="mkt-mobile-menu" id="mktMobileMenu">
+      <a href="#mkt-features" onclick="toggleMktMenu()">Features</a>
+      <a href="#mkt-how" onclick="toggleMktMenu()">How it works</a>
+      <a href="/privacy.html">Privacy</a>
     </div>
   </nav>
 
@@ -1100,6 +1114,20 @@ Daniel, daniel@example.com, MailFlows Inc"></textarea>
 </div>
 
 <script>
+(function(){
+  try{
+    if(localStorage.getItem('mf_user') && localStorage.getItem('mf_token')){
+      document.getElementById('appWrap').style.display='block';
+    } else {
+      document.getElementById('marketingPage').style.display='block';
+    }
+  }catch(e){
+    document.getElementById('marketingPage').style.display='block';
+  }
+})();
+</script>
+
+<script>
 // ══════════════════════════════
 // CONFIG
 // ══════════════════════════════
@@ -1265,6 +1293,7 @@ async function apiFetch(url, options={}){
 }
 
 function backToLanding(){ document.getElementById('authWrap').style.display='none'; const m=document.getElementById('marketingPage'); if(m){ m.style.display='block'; window.scrollTo(0,0); } }
+function toggleMktMenu(){ const m=document.getElementById('mktMobileMenu'); if(m) m.classList.toggle('open'); }
 function hideMarketing(){ const m=document.getElementById('marketingPage'); if(m) m.style.display='none'; }
 function goToSignIn(){ hideMarketing(); document.getElementById('authWrap').style.display='grid'; showLogin(); }
 function goToSignup(){ hideMarketing(); document.getElementById('authWrap').style.display='grid'; showRegister(); }
@@ -1384,6 +1413,15 @@ function loadDashboard(){
   // Fetch fresh user data from backend to get correct limits
   fetchFreshUserData();
   setTimeout(updateBillingInfo, 500);
+  try{
+    const lastPage=localStorage.getItem('mf_last_page');
+    if(lastPage && lastPage!=='dashboard' && document.getElementById('page-'+lastPage)){
+      const navEl=Array.from(document.querySelectorAll('.nav-item')).find(
+        el=>(el.getAttribute('onclick')||'').includes(`showPage('${lastPage}'`)
+      );
+      showPage(lastPage, navEl||null);
+    }
+  }catch(e){}
 }
 
 async function fetchFreshUserData(){
@@ -1828,6 +1866,7 @@ if(!window._announceInterval){
 // NAVIGATION
 // ══════════════════════════════
 function showPage(pageId,navEl){
+  try{ localStorage.setItem('mf_last_page', pageId); }catch(e){}
   document.querySelectorAll('.page-content').forEach(p=>p.classList.remove('active'));
   const page=document.getElementById(`page-${pageId}`);
   if(page) page.classList.add('active');
