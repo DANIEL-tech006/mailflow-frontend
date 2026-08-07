@@ -349,7 +349,7 @@ tr:hover td{background:var(--surface2);}
 <div id="marketingPage">
   <nav class="mkt-nav">
     <div class="mkt-nav-inner">
-      <div class="mkt-logo">Mail<span>Flows</span></div>
+      <div class="mkt-logo" style="cursor:pointer" onclick="window.scrollTo({top:0,behavior:'smooth'})">Mail<span>Flows</span></div>
       <div class="mkt-nav-links">
         <a href="#mkt-features">Features</a>
         <a href="#mkt-how">How it works</a>
@@ -419,7 +419,7 @@ tr:hover td{background:var(--surface2);}
 <div id="authWrap" class="auth-wrap show-hero" style="display:none">
   <div class="auth-left">
     <div style="width:100%;max-width:420px;position:relative;z-index:1;margin-top:auto;margin-bottom:auto">
-      <div class="auth-brand">Mail<span>Flows</span></div>
+      <div class="auth-brand" style="cursor:pointer" onclick="backToLanding()">Mail<span>Flows</span></div>
       <div class="hero-kicker">Cold email, done right</div>
       <h1 class="hero-headline">Your next client is one email away.</h1>
       <p class="hero-sub">MailFlows helps freelancers, marketers, and small agencies find real business contacts and reach them by email — without hiring a sales team or renting a mailing server.</p>
@@ -496,7 +496,7 @@ tr:hover td{background:var(--surface2);}
 <div id="appWrap" class="app-wrap" style="display:none">
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
   <aside class="sidebar" id="sidebar">
-    <div class="sidebar-brand">Mail<span>Flows</span></div>
+    <div class="sidebar-brand" style="cursor:pointer" onclick="showPage('dashboard',null)">Mail<span>Flows</span></div>
     <div class="sidebar-section">
       <div class="sidebar-label">Main</div>
       <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="nav-icon">📊</span> Dashboard</div>
@@ -1264,6 +1264,7 @@ async function apiFetch(url, options={}){
   }
 }
 
+function backToLanding(){ document.getElementById('authWrap').style.display='none'; const m=document.getElementById('marketingPage'); if(m){ m.style.display='block'; window.scrollTo(0,0); } }
 function hideMarketing(){ const m=document.getElementById('marketingPage'); if(m) m.style.display='none'; }
 function goToSignIn(){ hideMarketing(); document.getElementById('authWrap').style.display='grid'; showLogin(); }
 function goToSignup(){ hideMarketing(); document.getElementById('authWrap').style.display='grid'; showRegister(); }
