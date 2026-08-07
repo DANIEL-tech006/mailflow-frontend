@@ -84,6 +84,7 @@ body.sidebar-open{overflow:hidden;position:fixed;width:100%;}
 @media(max-width:700px){
   .mkt-nav-links{display:none;}
   .mkt-hamburger{display:flex;}
+  .mkt-signin-btn{display:none;}
 }
 
 .auth-wrap{min-height:100vh;min-height:100dvh;display:grid;grid-template-columns:1fr 1fr;}
@@ -365,7 +366,7 @@ tr:hover td{background:var(--surface2);}
       </div>
       <div class="mkt-nav-actions">
         <button class="mkt-hamburger" onclick="toggleMktMenu()" aria-label="Menu">☰</button>
-        <button class="btn btn-ghost btn-sm" onclick="goToSignIn()">Sign In</button>
+        <button class="btn btn-ghost btn-sm mkt-signin-btn" onclick="goToSignIn()">Sign In</button>
         <button class="btn btn-primary btn-sm" onclick="goToSignup()">Start Free</button>
       </div>
     </div>
@@ -373,6 +374,7 @@ tr:hover td{background:var(--surface2);}
       <a href="#mkt-features" onclick="toggleMktMenu()">Features</a>
       <a href="#mkt-how" onclick="toggleMktMenu()">How it works</a>
       <a href="/privacy.html">Privacy</a>
+      <a href="javascript:void(0)" onclick="toggleMktMenu();goToSignIn()">Sign In</a>
     </div>
   </nav>
 
@@ -417,6 +419,7 @@ tr:hover td{background:var(--surface2);}
     <div class="mkt-trust-item">🚫 No mailing server required</div>
     <div class="mkt-trust-item">🔐 Secure OAuth authentication</div>
   </section>
+  <p style="max-width:600px;margin:0 auto 20px;text-align:center;font-size:13px;color:var(--text3);padding:0 20px">MailFlows integrates with Google OAuth APIs to securely send personalized outreach emails directly through your own Gmail account.</p>
 
   <footer class="mkt-footer">
     <div class="mkt-footer-brand">Mail<span>Flows</span></div>
