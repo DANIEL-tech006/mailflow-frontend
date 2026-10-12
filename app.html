@@ -1119,9 +1119,10 @@ Daniel, daniel@example.com, MailFlows Inc"></textarea>
 <script>
 (function(){
   try{
+    var hasAction = /[?&]action=(signup|signin)/.test(window.location.search);
     if(localStorage.getItem('mf_user') && localStorage.getItem('mf_token')){
       document.getElementById('appWrap').style.display='block';
-    } else {
+    } else if(!hasAction){
       document.getElementById('marketingPage').style.display='block';
     }
   }catch(e){
@@ -3092,7 +3093,18 @@ window.addEventListener('load',async ()=>{
   // Normal load
   try{
     const saved=localStorage.getItem('mf_user');
-    if(saved){ hideMarketing(); currentUser=JSON.parse(saved); loadDashboard(); }
+    if(saved){
+      hideMarketing(); currentUser=JSON.parse(saved); loadDashboard();
+    } else {
+      const actionParam=new URLSearchParams(window.location.search).get('action');
+      if(actionParam==='signup'){
+        document.getElementById('authWrap').style.display='grid';
+        showRegister();
+      } else if(actionParam==='signin'){
+        document.getElementById('authWrap').style.display='grid';
+        showLogin();
+      }
+    }
   } catch(e){ try{localStorage.clear();}catch(e2){} }
 
   document.getElementById('loginPassword').addEventListener('keydown',e=>{ if(e.key==='Enter') handleLogin(); });
